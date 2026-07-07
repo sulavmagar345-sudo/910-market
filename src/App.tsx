@@ -9,35 +9,43 @@ import IntroAnimation from './components/IntroAnimation';
 import AgeGate from './components/AgeGate';
 import AuthModal from './components/AuthModal';
 import OurStory from './pages/OurStory';
+import { AdminRoutes } from '@admin/routes';
+
+function Storefront() {
+  return (
+    <>
+      <AgeGate />
+      <AuthModal />
+      <Layout>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/product/:id" element={<ProductDetail />} />
+          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/our-story" element={<OurStory />} />
+        </Routes>
+      </Layout>
+    </>
+  );
+}
 
 function App() {
   const [introComplete, setIntroComplete] = useState(false);
 
   return (
     <>
-      {/* 1. Intro Animation blocks the screen initially */}
       <AnimatePresence mode="wait">
         {!introComplete && (
           <IntroAnimation onComplete={() => setIntroComplete(true)} />
         )}
       </AnimatePresence>
 
-      {/* 2. Main App renders behind Age Gate once Intro is done */}
       {introComplete && (
-        <>
-          <AgeGate />
-          <AuthModal />
-          <BrowserRouter>
-            <Layout>
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/product/:id" element={<ProductDetail />} />
-                <Route path="/checkout" element={<Checkout />} />
-                <Route path="/our-story" element={<OurStory />} />
-              </Routes>
-            </Layout>
-          </BrowserRouter>
-        </>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/admin/*" element={<AdminRoutes />} />
+            <Route path="/*" element={<Storefront />} />
+          </Routes>
+        </BrowserRouter>
       )}
     </>
   );

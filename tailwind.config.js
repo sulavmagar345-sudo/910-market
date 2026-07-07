@@ -11,6 +11,21 @@ export default {
   theme: {
     extend: {
       colors: {
+          admin: {
+            "warm-ivory": "#FDFBF7",
+            "soft-white": "#F9F9F8",
+            "deep-forest": "#1A2E20",
+            "luxury-gold": "#D4AF37",
+            "slate-gray": "#64748B",
+            "success": "#10B981",
+            "warning": "#F59E0B",
+            "danger": "#EF4444",
+            "background": "#FDFBF7",
+            "surface": "#FFFFFF",
+            "border": "#E2E8F0",
+            "text": "#0F172A",
+            "text-muted": "#64748B"
+          },
           "outline-variant": "#c4c7c7",
           "on-secondary": "#ffffff",
           "surface-dim": "#dadad9",

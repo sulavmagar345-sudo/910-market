@@ -1,8 +1,13 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import path from 'path'
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  // Trigger restart
+  resolve: {
+    alias: {
+      '@admin': path.resolve(__dirname, './src/admin'),
+    },
+  },
 })
