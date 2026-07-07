@@ -133,8 +133,8 @@ export default function ProductDetail() {
   return (
     <div className="flex-1 bg-surface-bright">
       {/* Breadcrumb Navigation */}
-      <div className="bg-surface-container-low border-b border-stone-gray py-3 px-4 md:px-16">
-        <div className="max-w-[1280px] mx-auto flex items-center gap-2 text-xs font-label-sm text-on-surface-variant">
+      <div className="bg-surface-container-low border-b border-stone-gray py-3 px-4 md:px-16 overflow-x-auto no-scrollbar">
+        <div className="max-w-[1280px] mx-auto flex items-center gap-2 text-xs font-label-sm text-on-surface-variant min-w-max">
           <Link to="/" className="hover:text-primary transition-colors flex items-center"><span className="material-symbols-outlined text-[16px] mr-1">home</span> Home</Link>
           <span className="material-symbols-outlined text-[14px]">chevron_right</span>
           <span className="text-on-surface-variant uppercase tracking-wider">{product.category}</span>
@@ -151,22 +151,22 @@ export default function ProductDetail() {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
-            className="lg:col-span-5 border border-stone-gray/60 rounded-xl bg-white p-8 relative flex flex-col items-center justify-center shadow-sm"
+            className="lg:col-span-5 border border-stone-gray/60 rounded-xl bg-white p-6 md:p-8 relative flex flex-col items-center justify-center shadow-sm"
           >
             {product.type === 'image' ? (
               <img
                 src={product.bgUrl}
                 alt={product.name}
-                className="h-[450px] w-auto object-contain z-10"
+                className="h-[280px] sm:h-[350px] md:h-[450px] w-auto object-contain z-10"
               />
             ) : (
-              <span className="material-symbols-outlined text-[120px] text-stone-gray/60 z-10">{product.icon}</span>
+              <span className="material-symbols-outlined text-[80px] md:text-[120px] text-stone-gray/60 z-10">{product.icon}</span>
             )}
             
             {/* Volume Badge like reference */}
-            <div className="absolute bottom-6 right-6 bg-primary text-white font-bold text-center px-4 py-2 rounded-lg shadow-md z-10 flex flex-col items-center justify-center">
-              <span className="text-xl font-headline-md leading-none">{product.volume.replace('ML', '')}</span>
-              <span className="text-xs uppercase tracking-wider text-secondary leading-none mt-1">ML</span>
+            <div className="absolute bottom-4 right-4 md:bottom-6 md:right-6 bg-primary text-white font-bold text-center px-3 py-1.5 md:px-4 md:py-2 rounded-lg shadow-md z-10 flex flex-col items-center justify-center">
+              <span className="text-lg md:text-xl font-headline-md leading-none">{product.volume.replace('ML', '')}</span>
+              <span className="text-[10px] md:text-xs uppercase tracking-wider text-secondary leading-none mt-1">ML</span>
             </div>
           </motion.div>
 
@@ -223,30 +223,37 @@ export default function ProductDetail() {
             </div>
             
             {/* Action Bar (Price, Qty, Place Order) */}
-            <div className="mt-auto border border-stone-gray/50 rounded-xl p-6 bg-surface flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="mt-auto border border-stone-gray/50 rounded-xl p-5 md:p-6 bg-surface flex flex-col xl:flex-row items-start xl:items-center justify-between gap-6 shadow-sm">
               
               {/* Price */}
-              <div className="text-center md:text-left">
+              <div className="text-left w-full xl:w-auto flex justify-between items-center xl:block border-b border-stone-gray/50 xl:border-0 pb-4 xl:pb-0">
                 <span className="font-label-sm text-xs uppercase tracking-widest text-on-surface-variant block mb-1">Total Price</span>
-                <span className="font-headline-lg text-3xl text-secondary font-bold">{(product.numericPrice * qty).toLocaleString('en-US', { style: 'currency', currency: 'NPR' }).replace('NPR', 'Rs.')}</span>
+                <span className="font-headline-lg text-2xl md:text-3xl text-secondary font-bold">{(product.numericPrice * qty).toLocaleString('en-US', { style: 'currency', currency: 'NPR' }).replace('NPR', 'Rs.')}</span>
               </div>
 
-              <div className="flex items-center gap-4">
-                {/* Quantity Control */}
-                <div className="flex items-center border border-stone-gray rounded h-12 bg-white">
-                  <button onClick={() => handleQtyChange(-1)} className="w-12 h-full text-on-surface-variant hover:bg-surface-container-low transition-colors font-bold flex items-center justify-center border-r border-stone-gray">
-                    <span className="material-symbols-outlined text-[18px]">remove</span>
-                  </button>
-                  <div className="w-12 h-full flex items-center justify-center font-bold text-primary">{qty}</div>
-                  <button onClick={() => handleQtyChange(1)} className="w-12 h-full text-on-surface-variant hover:bg-surface-container-low transition-colors font-bold flex items-center justify-center border-l border-stone-gray">
-                    <span className="material-symbols-outlined text-[18px]">add</span>
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full xl:w-auto">
+                <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
+                  {/* Quantity Control */}
+                  <div className="flex items-center border border-stone-gray rounded-lg h-12 bg-white flex-1 sm:flex-none justify-center">
+                    <button onClick={() => handleQtyChange(-1)} className="w-12 h-full text-on-surface-variant hover:bg-surface-container-low transition-colors font-bold flex items-center justify-center border-r border-stone-gray rounded-l-lg">
+                      <span className="material-symbols-outlined text-[18px]">remove</span>
+                    </button>
+                    <div className="w-16 h-full flex items-center justify-center font-bold text-primary bg-surface-bright">{qty}</div>
+                    <button onClick={() => handleQtyChange(1)} className="w-12 h-full text-on-surface-variant hover:bg-surface-container-low transition-colors font-bold flex items-center justify-center border-l border-stone-gray rounded-r-lg">
+                      <span className="material-symbols-outlined text-[18px]">add</span>
+                    </button>
+                  </div>
+
+                  {/* Favorite Button */}
+                  <button className="h-12 w-12 flex-shrink-0 flex items-center justify-center border border-stone-gray rounded-lg hover:bg-surface-container-low text-secondary transition-colors bg-white shadow-sm">
+                    <span className="material-symbols-outlined text-[20px]">favorite_border</span>
                   </button>
                 </div>
 
                 {/* Place Order / Add to Cart */}
                 <button
                   onClick={handleAdd}
-                  className={`h-12 px-8 font-label-md uppercase tracking-widest rounded transition-all flex items-center justify-center gap-2 font-bold shadow-sm ${
+                  className={`h-12 px-8 font-label-md uppercase tracking-widest rounded-lg transition-all flex items-center justify-center gap-2 font-bold shadow-md w-full sm:w-auto flex-shrink-0 active:scale-[0.98] ${
                     added
                       ? 'bg-secondary text-white'
                       : 'bg-[#EFA75D] hover:bg-[#E09040] text-white'
@@ -254,11 +261,6 @@ export default function ProductDetail() {
                 >
                   <span className="material-symbols-outlined text-[18px]">{added ? 'check' : 'shopping_bag'}</span>
                   {added ? 'Added!' : 'Place Order'}
-                </button>
-                
-                {/* Favorite Button */}
-                <button className="h-12 w-12 flex items-center justify-center border border-stone-gray rounded hover:bg-surface-container-low text-secondary transition-colors bg-white">
-                  <span className="material-symbols-outlined text-[20px]">favorite_border</span>
                 </button>
               </div>
               

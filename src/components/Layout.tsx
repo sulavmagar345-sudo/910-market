@@ -1,8 +1,11 @@
 import { type ReactNode, useState } from 'react';
 import { useCartStore } from '../store/useCartStore';
+import { useAuthStore } from '../store/useAuthStore';
 import CartSidebar from './CartSidebar';
 import { Link, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
+
+const ANNOUNCEMENT_TEXT = "Fast Delivery inside Ring Road within 45 minutes   •   Get 10% Off on your first order with code WELCOME   •   100% Authentic Spirits & Secure Checkout   •   ";
 
 interface LayoutProps {
   children: ReactNode;
@@ -35,11 +38,27 @@ const navCategories = [
   },
   {
     label: 'Gin',
-    items: ['London Dry Gin', 'Botanical Gin', 'Flavoured & Pink Gin'],
+    items: ['London Dry Gin', 'Botanical Gin', 'Flavoured & Pink Gin', 'Nepali Craft Gin'],
+  },
+  {
+    label: 'Tequila',
+    items: ['Blanco / Silver', 'Reposado', 'Añejo', 'Mezcal', 'Premium Tequila (Don Julio, Patron)'],
+  },
+  {
+    label: 'Liqueurs',
+    items: ['Cream Liqueur (Baileys)', 'Coffee Liqueur (Kahlúa)', 'Fruit Liqueur', 'Herbal & Bitter Liqueur', 'Schnapps'],
+  },
+  {
+    label: 'Sake & Asian',
+    items: ['Japanese Sake', 'Soju (Korean)', 'Baijiu (Chinese)', 'Mao Tai', 'Rice Wine'],
+  },
+  {
+    label: 'Cider & RTD',
+    items: ['Apple Cider', 'Pear Cider', 'Hard Seltzer', 'Ready-to-Drink Cocktails', 'Alcopops'],
   },
   { 
     label: 'Mixers', 
-    items: ['Tonic Water', 'Ginger Ale', 'Club Soda', 'Juices'] 
+    items: ['Tonic Water', 'Ginger Ale', 'Club Soda', 'Juices', 'Syrups & Bitters', 'Cocktail Mixes'] 
   },
 ];
 
@@ -53,11 +72,14 @@ function NavItem({ label, items }: { label: string; items: string[] }) {
       onMouseEnter={() => setOpen(true)}
       onMouseLeave={() => setOpen(false)}
     >
-      <button className="flex items-center gap-1 font-label-md uppercase tracking-widest text-on-surface-variant hover:text-primary transition-colors py-1 whitespace-nowrap">
+      <button 
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-1 font-label-md uppercase tracking-widest text-on-surface-variant hover:text-primary transition-colors py-1 whitespace-nowrap"
+      >
         {label}
         {hasDropdown && (
-          <span className="material-symbols-outlined text-[14px]">
-            {open ? 'expand_less' : 'expand_more'}
+          <span className={`material-symbols-outlined text-[14px] transition-transform duration-200 ${open ? 'rotate-180' : ''}`}>
+            expand_more
           </span>
         )}
       </button>
@@ -91,15 +113,35 @@ function NavItem({ label, items }: { label: string; items: string[] }) {
 
 export default function Layout({ children }: LayoutProps) {
   const { toggleCart, items } = useCartStore();
+  const { user, openAuthModal, logout } = useAuthStore();
   const location = useLocation();
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
 
   const isCheckout = location.pathname === '/checkout';
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
     <>
-      <nav className="bg-white/95 backdrop-blur-md fixed top-0 w-full z-50 border-b border-stone-gray shadow-sm">
-        <div className="flex justify-between items-center px-4 md:px-16 h-20 max-w-[1280px] mx-auto">
+      <nav className="bg-white/95 backdrop-blur-md fixed top-0 w-full z-50 shadow-sm flex flex-col">
+        {/* Scrolling Marquee Banner */}
+        <div className="bg-primary text-white h-8 flex items-center overflow-hidden w-full relative z-50 whitespace-nowrap">
+          <motion.div
+            initial={{ x: 0 }}
+            animate={{ x: "-50%" }}
+            transition={{
+              repeat: Infinity,
+              ease: "linear",
+              duration: 20
+            }}
+            className="flex font-label-sm uppercase tracking-widest text-[10px] md:text-xs"
+          >
+            {/* We render the text twice to create a seamless infinite loop */}
+            <span className="px-4">{ANNOUNCEMENT_TEXT}</span>
+            <span className="px-4">{ANNOUNCEMENT_TEXT}</span>
+          </motion.div>
+        </div>
+
+        <div className="flex justify-between items-center px-4 md:px-16 h-20 max-w-[1280px] w-full mx-auto border-b border-stone-gray/50">
           {/* Logo */}
           <Link to="/" className="font-headline-md text-3xl font-bold text-primary tracking-tighter transition-transform duration-200 active:scale-95 shrink-0">
             9/10 <span className="text-sm font-label-md uppercase tracking-widest text-secondary block -mt-2">Store</span>
@@ -124,8 +166,12 @@ export default function Layout({ children }: LayoutProps) {
 
           <div className="flex items-center space-x-2 md:space-x-4 shrink-0">
             {!isCheckout && (
-              <button aria-label="Search" className="md:hidden text-on-surface-variant hover:text-primary p-2">
-                <span className="material-symbols-outlined text-[24px]">search</span>
+              <button 
+                aria-label="Search" 
+                onClick={() => setIsMobileSearchOpen(!isMobileSearchOpen)}
+                className="md:hidden text-on-surface-variant hover:text-primary p-2"
+              >
+                <span className="material-symbols-outlined text-[24px]">{isMobileSearchOpen ? 'close' : 'search'}</span>
               </button>
             )}
             <button
@@ -145,11 +191,60 @@ export default function Layout({ children }: LayoutProps) {
                 </motion.span>
               )}
             </button>
-            <button aria-label="Profile" className="text-on-surface-variant hover:text-primary transition-colors hover:bg-pale-gold/10 p-2 rounded-full duration-300">
-              <span className="material-symbols-outlined text-[24px]">person</span>
-            </button>
+            <div className="relative group">
+              <button 
+                aria-label="Profile" 
+                onClick={() => !user ? openAuthModal('login') : null}
+                className="text-on-surface-variant hover:text-primary transition-colors hover:bg-pale-gold/10 p-2 rounded-full duration-300 flex items-center gap-2"
+              >
+                <span className="material-symbols-outlined text-[24px]">person</span>
+                {user && <span className="hidden md:block font-label-sm text-xs font-bold text-primary">{user.name}</span>}
+              </button>
+              
+              {user && (
+                <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-stone-gray rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-[60] py-2">
+                  <div className="px-4 py-2 border-b border-stone-gray/50 mb-2">
+                    <p className="font-label-md text-primary font-bold">{user.name}</p>
+                    <p className="font-body-md text-xs text-on-surface-variant truncate">{user.email}</p>
+                  </div>
+                  <button className="w-full text-left px-4 py-2 font-body-md text-sm text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors">
+                    My Orders
+                  </button>
+                  <button 
+                    onClick={logout}
+                    className="w-full text-left px-4 py-2 font-body-md text-sm text-red-600 hover:bg-red-50 transition-colors"
+                  >
+                    Log out
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
+
+        {/* Mobile Search Bar Dropdown */}
+        <AnimatePresence>
+          {isMobileSearchOpen && !isCheckout && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="md:hidden border-t border-stone-gray bg-white overflow-hidden"
+            >
+              <div className="p-4">
+                <div className="flex items-center bg-surface-container-low rounded border border-stone-gray px-4 py-3">
+                  <span className="material-symbols-outlined text-on-surface-variant text-[20px]">search</span>
+                  <input
+                    type="text"
+                    placeholder="Search products..."
+                    className="bg-transparent border-none focus:outline-none focus:ring-0 text-sm ml-2 w-full text-on-surface"
+                    autoFocus
+                  />
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Sub Navigation - HIDDEN on checkout */}
         {!isCheckout && (
@@ -163,7 +258,7 @@ export default function Layout({ children }: LayoutProps) {
         )}
       </nav>
 
-      <main className={`${isCheckout ? 'pt-[80px]' : 'pt-[130px] md:pt-[136px]'} min-h-screen flex flex-col`}>
+      <main className={`${isCheckout ? 'pt-[112px]' : 'pt-[162px] md:pt-[168px]'} min-h-screen flex flex-col`}>
         {children}
       </main>
 

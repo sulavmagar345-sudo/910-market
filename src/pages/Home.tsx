@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useCartStore } from '../store/useCartStore';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const products = [
   {
@@ -65,6 +65,7 @@ export default function Home() {
   const [addedIds, setAddedIds] = useState<Set<number>>(new Set());
   const [quantities, setQuantities] = useState<Record<number, number>>({});
   const { addItem } = useCartStore();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -122,7 +123,13 @@ export default function Home() {
                   <h2 className="font-display-lg text-2xl md:text-5xl text-white mb-5 tracking-tight leading-tight">
                     {slide.title}
                   </h2>
-                  <button className="px-6 py-2.5 bg-white text-primary font-label-md uppercase tracking-widest hover:bg-pale-gold transition-all duration-300 rounded text-sm">
+                  <button 
+                    onClick={() => {
+                      if (slide.cta === 'Our Story') navigate('/our-story');
+                      else document.getElementById('bestsellers')?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    className="px-6 py-2.5 bg-white text-primary font-label-md uppercase tracking-widest hover:bg-pale-gold transition-all duration-300 rounded text-sm"
+                  >
                     {slide.cta}
                   </button>
                 </div>

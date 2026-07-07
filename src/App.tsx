@@ -7,6 +7,8 @@ import Checkout from './pages/Checkout';
 import ProductDetail from './pages/ProductDetail';
 import IntroAnimation from './components/IntroAnimation';
 import AgeGate from './components/AgeGate';
+import AuthModal from './components/AuthModal';
+import OurStory from './pages/OurStory';
 
 function App() {
   const [introComplete, setIntroComplete] = useState(false);
@@ -24,12 +26,14 @@ function App() {
       {introComplete && (
         <>
           <AgeGate />
+          <AuthModal />
           <BrowserRouter>
             <Layout>
               <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/product/:id" element={<ProductDetail />} />
                 <Route path="/checkout" element={<Checkout />} />
+                <Route path="/our-story" element={<OurStory />} />
               </Routes>
             </Layout>
           </BrowserRouter>

@@ -1,9 +1,12 @@
 import { useCartStore } from '../store/useCartStore';
+import { useAuthStore } from '../store/useAuthStore';
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
 
 export default function Checkout() {
   const { items, getTotal, toggleCart, clearCart } = useCartStore();
+  const { user, openAuthModal } = useAuthStore();
+  
   const [step, setStep] = useState(1); // 1: Shipping, 2: Payment, 3: Confirmation
   const [paymentMethod, setPaymentMethod] = useState('esewa');
   const [orderId, setOrderId] = useState('');
@@ -68,8 +71,25 @@ export default function Checkout() {
 
           {step === 1 && (
             <div className="animate-fade-in">
-              <h2 className="font-headline-md text-2xl text-primary mb-6 font-bold">Shipping Information</h2>
-              <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); setStep(2); }}>
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="font-headline-md text-2xl text-primary font-bold">Shipping Information</h2>
+                {!user && (
+                  <button 
+                    onClick={() => openAuthModal('login')}
+                    className="font-label-sm text-secondary hover:underline text-xs tracking-widest uppercase"
+                  >
+                    Log in for faster checkout
+                  </button>
+                )}
+              </div>
+              <form className="space-y-6" onSubmit={(e) => { 
+                e.preventDefault(); 
+                if (!user) {
+                  openAuthModal('signup');
+                  return;
+                }
+                setStep(2); 
+              }}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block font-label-sm uppercase tracking-widest text-on-surface-variant mb-2">First Name</label>
