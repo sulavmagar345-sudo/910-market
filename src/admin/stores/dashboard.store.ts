@@ -41,12 +41,14 @@ interface Sparklines {
 interface RecentActivity {
   id: string;
   type: string;
-  title: string;
-  description: string;
-  timestamp: string;
   icon: string;
-  iconBg: string;
-  iconColor: string;
+  user: string;
+  action: string;
+  detail?: string;
+  amount?: string;
+  time: string;
+  link?: string;
+  color?: string;
 }
 
 interface DashboardStore {
@@ -90,7 +92,6 @@ export const useDashboardStore = create<DashboardStore>((set) => ({
         { count: totalCustomers },
         { data: revenueData },
         { count: pendingOrders },
-        { count: todayOrders },
         { data: todayRevenueData },
         { count: yesterdayOrders },
         { count: newCustomersToday },
@@ -101,7 +102,6 @@ export const useDashboardStore = create<DashboardStore>((set) => ({
         supabase.from('profiles').select('*', { count: 'exact', head: true }),
         supabase.from('orders').select('total_amount').eq('payment_status', 'paid'),
         supabase.from('orders').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
-        supabase.from('orders').select('*', { count: 'exact', head: true }).gte('created_at', todayISO),
         supabase.from('orders').select('total_amount').gte('created_at', todayISO).eq('payment_status', 'paid'),
         supabase.from('orders').select('*', { count: 'exact', head: true }).gte('created_at', yesterdayISO).lt('created_at', todayISO),
         supabase.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', todayISO),
@@ -142,12 +142,12 @@ export const useDashboardStore = create<DashboardStore>((set) => ({
       const recentActivity: RecentActivity[] = (recentOrdersData || []).map(o => ({
         id: o.id,
         type: 'order',
-        title: `New Order #${o.order_number}`,
-        description: `${o.customer_name} — रू ${Number(o.total_amount).toLocaleString()}`,
-        timestamp: o.created_at,
         icon: 'ShoppingCart',
-        iconBg: 'bg-blue-50',
-        iconColor: 'text-blue-500',
+        user: o.customer_name,
+        action: 'placed an order',
+        amount: `रू ${Number(o.total_amount).toLocaleString()}`,
+        time: o.created_at,
+        color: 'blue',
       }));
 
       set({

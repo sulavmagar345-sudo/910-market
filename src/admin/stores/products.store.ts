@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Product, FilterParams, ProductImage } from '../types';
+import type { Product, FilterParams } from '../types';
 import { supabase } from '../../lib/supabase';
 
 interface ProductsStore {
@@ -12,7 +12,7 @@ interface ProductsStore {
   updateProductStatus: (id: string, status: Product['status']) => Promise<void>;
 }
 
-export const useProductsStore = create<ProductsStore>((set, get) => ({
+export const useProductsStore = create<ProductsStore>((set) => ({
   products: [],
   total: 0,
   isLoading: false,

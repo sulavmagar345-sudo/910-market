@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '../store/useAuthStore';
 
 export default function AuthModal() {
-  const { error, isAuthModalOpen, authView, authMethod, otpStep, closeAuthModal, setAuthView, setAuthMethod, login, signup, sendOtp, verifyOtp } = useAuthStore();
+  const { error, isAuthModalOpen, authView, otpStep, closeAuthModal, setAuthView, login, signup, verifyOtp } = useAuthStore();
   
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
