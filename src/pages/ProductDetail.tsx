@@ -1,7 +1,8 @@
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useCartStore } from '../store/useCartStore';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
 
 const productDetails = [
   {
@@ -107,7 +108,60 @@ export default function ProductDetail() {
   const [added, setAdded] = useState(false);
   const [qty, setQty] = useState(1);
 
-  const product = productDetails.find((p) => p.id === Number(id));
+  const [liveProduct, setLiveProduct] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchProduct() {
+      if (!isNaN(Number(id))) {
+        // It's a number, so it's a dummy product
+        setIsLoading(false);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('products')
+        .select('*, product_images(url), categories(name), brands(name)')
+        .eq('id', id)
+        .single();
+
+      if (!error && data) {
+        setLiveProduct({
+          id: data.id,
+          category: data.categories?.name || 'Uncategorized',
+          name: data.name,
+          price: `रू ${Number(data.price).toLocaleString()}`,
+          numericPrice: Number(data.price),
+          bgUrl: data.product_images?.[0]?.url || '',
+          type: data.product_images?.[0]?.url ? 'image' : 'icon',
+          origin: 'Local',
+          brand: data.brands?.name || 'Unknown',
+          abv: 'N/A',
+          volume: '750ML',
+          tagline: data.short_description || '',
+          story: data.description || '',
+          color: 'N/A',
+          nose: 'N/A',
+          palate: 'N/A',
+          finish: 'N/A',
+        });
+      }
+      setIsLoading(false);
+    }
+
+    fetchProduct();
+  }, [id]);
+
+  const mockProduct = productDetails.find((p) => p.id === Number(id));
+  const product = liveProduct || mockProduct;
+
+  if (isLoading) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center py-20">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    );
+  }
 
   if (!product) {
     return (
