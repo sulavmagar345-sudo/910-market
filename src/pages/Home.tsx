@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useCartStore } from '../store/useCartStore';
 import { Link, useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
 
 const products = [
   {
@@ -62,10 +63,39 @@ const bannerSlides = [
 
 export default function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [addedIds, setAddedIds] = useState<Set<number>>(new Set());
-  const [quantities, setQuantities] = useState<Record<number, number>>({});
+  const [addedIds, setAddedIds] = useState<Set<number | string>>(new Set());
+  const [quantities, setQuantities] = useState<Record<number | string, number>>({});
+  const [liveProducts, setLiveProducts] = useState<any[]>([]);
   const { addItem } = useCartStore();
   const navigate = useNavigate();
+
+  // Fetch live products from DB; fall back to hardcoded if none exist
+  useEffect(() => {
+    async function fetchProducts() {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*, product_images(url), categories(name)')
+        .eq('is_active', true)
+        .eq('status', 'active');
+      if (!error && data && data.length > 0) {
+        setLiveProducts(data.map((p) => ({
+          id: p.id,
+          category: p.categories?.name || 'Uncategorized',
+          name: p.name,
+          price: `\u0930\u0942 ${Number(p.price).toLocaleString()}`,
+          volume: '750 ML',
+          bgUrl: p.product_images?.[0]?.url || '',
+          bgPosition: 'center',
+          type: p.product_images?.[0]?.url ? 'image' : 'icon',
+          icon: 'liquor',
+        })));
+      }
+    }
+    fetchProducts();
+  }, []);
+
+  // Combine live DB products with the demo products for the presentation
+  const displayProducts = [...liveProducts, ...products];
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -74,14 +104,14 @@ export default function Home() {
     return () => clearInterval(interval);
   }, []);
 
-  const handleQtyChange = (id: number, delta: number) => {
+  const handleQtyChange = (id: number | string, delta: number) => {
     setQuantities(prev => ({
       ...prev,
       [id]: Math.max(1, (prev[id] || 1) + delta)
     }));
   };
 
-  const handleAddToCart = (product: typeof products[0]) => {
+  const handleAddToCart = (product: any) => {
     const qty = quantities[product.id] || 1;
     
     // Add multiple times to handle the requested quantity
@@ -183,7 +213,7 @@ export default function Home() {
 
           {/* Products Grid */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5 md:gap-8">
-            {products.map((product) => {
+            {displayProducts.map((product) => {
               const isAdded = addedIds.has(product.id);
               const qty = quantities[product.id] || 1;
               return (
@@ -210,8 +240,8 @@ export default function Home() {
                     
                     {/* Elegant Volume Badge */}
                     <div className="absolute bottom-3 right-3 bg-primary text-white font-bold text-center px-2 py-1 rounded shadow-md z-10 flex flex-col items-center justify-center min-w-[48px]">
-                      <span className="text-sm font-headline-md leading-none">{product.volume.split(' ')[0]}</span>
-                      <span className="text-[9px] uppercase tracking-wider text-secondary leading-none mt-1">{product.volume.split(' ')[1]}</span>
+                      <span className="text-sm font-headline-md leading-none">{product.volume?.split(' ')?.[0] ?? '750'}</span>
+                      <span className="text-[9px] uppercase tracking-wider text-secondary leading-none mt-1">{product.volume?.split(' ')?.[1] ?? 'ML'}</span>
                     </div>
 
                     {/* Premium Hover Overlay for View */}

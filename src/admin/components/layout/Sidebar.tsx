@@ -1,5 +1,6 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuthStore } from '../../../store/useAuthStore';
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -149,6 +150,13 @@ function NavItem({
 
 export function Sidebar({ collapsed, onToggleCollapse, onNavClick }: SidebarProps) {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useAuthStore();
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/admin/login');
+  };
 
   const isActive = (href: string) => {
     if (href === '/admin') return location.pathname === '/admin';
@@ -263,8 +271,8 @@ export function Sidebar({ collapsed, onToggleCollapse, onNavClick }: SidebarProp
               SA
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-slate-800 truncate">Super Admin</p>
-              <p className="text-xs text-slate-400 truncate">admin@910mart.com</p>
+              <p className="text-sm font-semibold text-slate-800 truncate">{user?.name || 'Admin'}</p>
+              <p className="text-xs text-slate-400 truncate">{user?.email}</p>
             </div>
           </div>
         )}
@@ -272,7 +280,9 @@ export function Sidebar({ collapsed, onToggleCollapse, onNavClick }: SidebarProp
         <TooltipProvider delayDuration={0}>
           <Tooltip>
             <TooltipTrigger asChild>
-              <button className={cn(
+              <button 
+                onClick={handleLogout}
+                className={cn(
                 'flex items-center gap-3 rounded-lg text-sm font-medium text-slate-500 hover:bg-red-50 hover:text-red-600 transition-colors',
                 collapsed ? 'h-10 w-10 justify-center' : 'w-full px-3 py-2'
               )}>

@@ -1,4 +1,2 @@
-import type {  Product  } from '../types';
-
-export const mockProducts: Product[] = [];
-
+// Mock data stubs — replaced by Supabase stores
+export const mockProducts: any[] = [];

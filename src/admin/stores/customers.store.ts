@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import type {  Customer, FilterParams  } from '../types';
-import { mockCustomers } from '../data/mock-customers';
+import type { Customer, FilterParams } from '../types';
+import { supabase } from '../../lib/supabase';
 
 interface CustomersStore {
   customers: Customer[];
@@ -19,25 +19,39 @@ export const useCustomersStore = create<CustomersStore>((set) => ({
   fetchCustomers: async (params) => {
     set({ isLoading: true, error: null });
     try {
-      await new Promise((resolve) => setTimeout(resolve, 600));
-      let filtered = [...mockCustomers];
-      
+      let query = supabase
+        .from('profiles')
+        .select('*', { count: 'exact' })
+        .order('created_at', { ascending: false });
+
       if (params?.search) {
-        const query = params.search.toLowerCase();
-        filtered = filtered.filter(c => 
-          c.name.toLowerCase().includes(query) || 
-          c.phone.includes(query) || 
-          (c.email && c.email.toLowerCase().includes(query))
-        );
+        const q = params.search;
+        query = query.or(`name.ilike.%${q}%,phone.ilike.%${q}%,email.ilike.%${q}%`);
       }
 
-      set({
-        customers: filtered,
-        total: filtered.length,
-        isLoading: false,
-      });
-    } catch (error) {
-      set({ error: 'Failed to load customers', isLoading: false });
+      const { data, error, count } = await query;
+      if (error) throw error;
+
+      const mapped: Customer[] = (data || []).map(c => ({
+        id: c.id,
+        name: c.name || 'Unknown',
+        email: c.email,
+        phone: c.phone || '',
+        avatar: c.avatar_url,
+        status: 'active' as const,
+        totalOrders: c.total_orders || 0,
+        totalSpent: Number(c.total_spent) || 0,
+        averageOrderValue: c.total_orders > 0 ? Number(c.total_spent) / c.total_orders : 0,
+        lastOrderAt: undefined,
+        addresses: [],
+        createdAt: c.created_at,
+        updatedAt: c.updated_at,
+      }));
+
+      set({ customers: mapped, total: count || 0, isLoading: false });
+    } catch (error: any) {
+      console.error('Error fetching customers:', error);
+      set({ error: error.message || 'Failed to load customers', isLoading: false });
     }
   }
 }));

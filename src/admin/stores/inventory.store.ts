@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import type {  InventoryItem, FilterParams  } from '../types';
-import { mockInventory } from '../data/mock-inventory';
+import type { InventoryItem, FilterParams } from '../types';
+import { supabase } from '../../lib/supabase';
 
 interface InventoryStore {
   inventory: InventoryItem[];
@@ -10,7 +10,7 @@ interface InventoryStore {
   updateStock: (productId: string, newStock: number) => Promise<void>;
 }
 
-export const useInventoryStore = create<InventoryStore>((set) => ({
+export const useInventoryStore = create<InventoryStore>((set, get) => ({
   inventory: [],
   isLoading: false,
   error: null,
@@ -18,14 +18,52 @@ export const useInventoryStore = create<InventoryStore>((set) => ({
   fetchInventory: async (params) => {
     set({ isLoading: true, error: null });
     try {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      let filtered = [...mockInventory];
+      let query = supabase
+        .from('inventory')
+        .select(`
+          quantity,
+          low_stock_threshold,
+          updated_at,
+          products!inner (
+            id,
+            name,
+            sku,
+            categories ( name ),
+            brands ( name )
+          )
+        `);
+        
+      const { data, error } = await query;
+      if (error) throw error;
       
+      const mappedInventory: InventoryItem[] = (data || []).map(i => {
+        const product = i.products as any;
+        const currentStock = i.quantity;
+        const lowStockThreshold = i.low_stock_threshold || 5;
+        
+        let status: 'in_stock' | 'low_stock' | 'out_of_stock' = 'in_stock';
+        if (currentStock === 0) status = 'out_of_stock';
+        else if (currentStock <= lowStockThreshold) status = 'low_stock';
+        
+        return {
+          productId: product.id,
+          productName: product.name,
+          sku: product.sku || '',
+          categoryName: product.categories?.name || 'Uncategorized',
+          brandName: product.brands?.name || 'No Brand',
+          currentStock,
+          lowStockThreshold,
+          status,
+          lastUpdated: i.updated_at
+        };
+      });
+      
+      let filtered = mappedInventory;
       if (params?.search) {
-        const query = params.search.toLowerCase();
+        const q = params.search.toLowerCase();
         filtered = filtered.filter(i => 
-          i.productName.toLowerCase().includes(query) || 
-          i.sku.toLowerCase().includes(query)
+          i.productName.toLowerCase().includes(q) || 
+          i.sku.toLowerCase().includes(q)
         );
       }
 
@@ -33,15 +71,22 @@ export const useInventoryStore = create<InventoryStore>((set) => ({
         inventory: filtered,
         isLoading: false,
       });
-    } catch (error) {
-      set({ error: 'Failed to load inventory', isLoading: false });
+    } catch (error: any) {
+      console.error('Error loading inventory:', error);
+      set({ error: error.message || 'Failed to load inventory', isLoading: false });
     }
   },
 
   updateStock: async (productId, newStock) => {
     set({ isLoading: true });
     try {
-      await new Promise((resolve) => setTimeout(resolve, 400));
+      const { error } = await supabase
+        .from('inventory')
+        .update({ quantity: newStock, updated_at: new Date().toISOString() })
+        .eq('product_id', productId);
+        
+      if (error) throw error;
+      
       set((state) => ({
         inventory: state.inventory.map(i => {
           if (i.productId === productId) {
@@ -52,8 +97,9 @@ export const useInventoryStore = create<InventoryStore>((set) => ({
         }),
         isLoading: false,
       }));
-    } catch (error) {
-      set({ error: 'Failed to update stock', isLoading: false });
+    } catch (error: any) {
+      console.error('Error updating stock:', error);
+      set({ error: error.message || 'Failed to update stock', isLoading: false });
     }
   }
 }));

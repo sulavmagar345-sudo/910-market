@@ -1,4 +1,2 @@
-import type {  InventoryItem  } from '../types';
-
-export const mockInventory: InventoryItem[] = [];
-
+// Mock data stubs — replaced by Supabase stores
+export const mockInventory: any[] = [];

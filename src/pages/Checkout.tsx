@@ -1,21 +1,57 @@
 import { useCartStore } from '../store/useCartStore';
 import { useAuthStore } from '../store/useAuthStore';
 import { Link } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
+import { supabase } from '../lib/supabase';
 
 export default function Checkout() {
   const { items, getTotal, toggleCart, clearCart } = useCartStore();
   const { user, openAuthModal } = useAuthStore();
   
-  const [step, setStep] = useState(1); // 1: Shipping, 2: Payment, 3: Confirmation
+  const [step, setStep] = useState(1);
   const [paymentMethod, setPaymentMethod] = useState('esewa');
   const [orderId, setOrderId] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
 
-  const handlePayment = () => {
-    const randomId = Math.floor(100000 + Math.random() * 900000).toString();
-    setOrderId(`ORD-${randomId}`);
-    setStep(3);
-    clearCart();
+  const handlePayment = async () => {
+    setIsSubmitting(true);
+    try {
+      const formData = formRef.current ? new FormData(formRef.current) : null;
+      const firstName = formData?.get('firstName') as string || '';
+      const lastName = formData?.get('lastName') as string || '';
+      const email = formData?.get('email') as string || user?.email || '';
+      const phone = formData?.get('phone') as string || user?.phone || '';
+      const address = formData?.get('address') as string || '';
+      const city = formData?.get('city') as string || '';
+
+      const orderPayload = {
+        p_customer_id: user?.id || null,
+        p_customer_name: `${firstName} ${lastName}`.trim() || user?.name || 'Guest',
+        p_customer_email: email,
+        p_customer_phone: phone,
+        p_shipping_address: { street_address: address, city, full_name: `${firstName} ${lastName}`.trim(), phone },
+        p_payment_method: paymentMethod === 'cod' ? 'cod' : 'esewa',
+        p_items: items.map(item => ({
+          product_id: item.id,
+          quantity: item.quantity
+        }))
+      };
+
+      const { data: orderResponse, error: orderError } = await supabase.rpc('create_secure_order', orderPayload);
+
+      if (orderError) throw orderError;
+      if (!orderResponse) throw new Error("No response from server");
+
+      setOrderId(orderResponse.order_number);
+      setStep(3);
+      clearCart();
+    } catch (err) {
+      console.error('Checkout failed:', err);
+      alert('Order could not be placed. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   
   if (items.length === 0 && step !== 3) {
@@ -82,43 +118,39 @@ export default function Checkout() {
                   </button>
                 )}
               </div>
-              <form className="space-y-6" onSubmit={(e) => { 
+              <form ref={formRef} className="space-y-6" onSubmit={(e) => { 
                 e.preventDefault(); 
-                if (!user) {
-                  openAuthModal('signup');
-                  return;
-                }
                 setStep(2); 
               }}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block font-label-sm uppercase tracking-widest text-on-surface-variant mb-2">First Name</label>
-                    <input required type="text" className="w-full p-3 border border-stone-gray rounded focus:border-secondary focus:ring-1 focus:ring-secondary outline-none transition-all" />
+                    <input required name="firstName" type="text" className="w-full p-3 border border-stone-gray rounded focus:border-secondary focus:ring-1 focus:ring-secondary outline-none transition-all" />
                   </div>
                   <div>
                     <label className="block font-label-sm uppercase tracking-widest text-on-surface-variant mb-2">Last Name</label>
-                    <input required type="text" className="w-full p-3 border border-stone-gray rounded focus:border-secondary focus:ring-1 focus:ring-secondary outline-none transition-all" />
+                    <input required name="lastName" type="text" className="w-full p-3 border border-stone-gray rounded focus:border-secondary focus:ring-1 focus:ring-secondary outline-none transition-all" />
                   </div>
                 </div>
                 
                 <div>
                   <label className="block font-label-sm uppercase tracking-widest text-on-surface-variant mb-2">Email Address</label>
-                  <input required type="email" className="w-full p-3 border border-stone-gray rounded focus:border-secondary focus:ring-1 focus:ring-secondary outline-none transition-all" />
+                  <input required name="email" type="email" className="w-full p-3 border border-stone-gray rounded focus:border-secondary focus:ring-1 focus:ring-secondary outline-none transition-all" />
                 </div>
                 
                 <div>
                   <label className="block font-label-sm uppercase tracking-widest text-on-surface-variant mb-2">Delivery Address</label>
-                  <input required type="text" className="w-full p-3 border border-stone-gray rounded focus:border-secondary focus:ring-1 focus:ring-secondary outline-none transition-all" placeholder="Street address, apartment, suite, etc." />
+                  <input required name="address" type="text" className="w-full p-3 border border-stone-gray rounded focus:border-secondary focus:ring-1 focus:ring-secondary outline-none transition-all" placeholder="Street address, apartment, suite, etc." />
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block font-label-sm uppercase tracking-widest text-on-surface-variant mb-2">City</label>
-                    <input required type="text" className="w-full p-3 border border-stone-gray rounded focus:border-secondary focus:ring-1 focus:ring-secondary outline-none transition-all" />
+                    <input required name="city" type="text" className="w-full p-3 border border-stone-gray rounded focus:border-secondary focus:ring-1 focus:ring-secondary outline-none transition-all" />
                   </div>
                   <div>
                     <label className="block font-label-sm uppercase tracking-widest text-on-surface-variant mb-2">Phone Number</label>
-                    <input required type="tel" className="w-full p-3 border border-stone-gray rounded focus:border-secondary focus:ring-1 focus:ring-secondary outline-none transition-all" />
+                    <input required name="phone" type="tel" className="w-full p-3 border border-stone-gray rounded focus:border-secondary focus:ring-1 focus:ring-secondary outline-none transition-all" />
                   </div>
                 </div>
                 
@@ -171,8 +203,10 @@ export default function Checkout() {
                 <button onClick={() => setStep(1)} className="px-6 py-4 border border-stone-gray text-primary font-label-md uppercase tracking-widest rounded hover:bg-surface-container-low transition-colors">
                   Back
                 </button>
-                <button onClick={handlePayment} className="flex-1 py-4 bg-secondary text-white font-label-md uppercase tracking-widest rounded hover:bg-secondary/90 transition-colors shadow-md flex justify-center items-center">
-                  {paymentMethod === 'cod' ? (
+                <button onClick={handlePayment} disabled={isSubmitting} className="flex-1 py-4 bg-secondary text-white font-label-md uppercase tracking-widest rounded hover:bg-secondary/90 transition-colors shadow-md flex justify-center items-center disabled:opacity-60">
+                  {isSubmitting ? (
+                    <span className="material-symbols-outlined animate-spin mr-2">refresh</span>
+                  ) : paymentMethod === 'cod' ? (
                     <>
                       <span className="material-symbols-outlined mr-2">local_shipping</span> Place Order (COD)
                     </>

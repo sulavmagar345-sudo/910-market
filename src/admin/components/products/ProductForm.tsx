@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -21,21 +22,51 @@ const productSchema = z.object({
   alcoholPercent: z.coerce.number().optional(),
   categoryId: z.string().min(1, 'Category is required'),
   brandId: z.string().min(1, 'Brand is required'),
-  status: z.enum(['published', 'draft', 'archived']),
+  status: z.enum(['active', 'draft', 'archived']),
   isFeatured: z.boolean().default(false),
   shortDescription: z.string().min(1, 'Short description is required'),
   description: z.string().min(1, 'Full description is required'),
 });
 
-type ProductFormValues = z.infer<typeof productSchema>;
+export type ProductFormValues = z.infer<typeof productSchema>;
 
-interface ProductFormProps {
+export interface ProductFormProps {
   initialData?: any;
-  onSubmit: (data: ProductFormValues) => void;
+  categories?: any[];
+  brands?: any[];
+  onSubmit: (data: ProductFormValues, imageFile: File | null) => void;
   isLoading?: boolean;
 }
 
-export function ProductForm({ initialData, onSubmit, isLoading }: ProductFormProps) {
+export function ProductForm({ initialData, categories, brands, onSubmit, isLoading }: ProductFormProps) {
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      if (initialData && initialData.images && initialData.images.length > 0 && initialData.images[0].url) {
+        setImagePreview(initialData.images[0].url);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }, [initialData]);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    try {
+      const file = e.target.files?.[0];
+      if (file) {
+        const url = URL.createObjectURL(file);
+        setImagePreview(url);
+      } else if (initialData && initialData.images && initialData.images.length > 0) {
+        setImagePreview(initialData.images[0].url);
+      } else {
+        setImagePreview(null);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema) as any,
     defaultValues: initialData || {
@@ -54,7 +85,13 @@ export function ProductForm({ initialData, onSubmit, isLoading }: ProductFormPro
   });
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit as any)} className="space-y-8">
+    <form
+      onSubmit={form.handleSubmit((d) => {
+        const fileInput = document.getElementById('image') as HTMLInputElement;
+        onSubmit(d, fileInput?.files?.[0] || null);
+      })}
+      className="space-y-8"
+    >
       <div className="grid gap-6 md:grid-cols-3">
         <div className="md:col-span-2 space-y-6">
           <Card>
@@ -63,13 +100,25 @@ export function ProductForm({ initialData, onSubmit, isLoading }: ProductFormPro
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
+                <Label htmlFor="image">Product Image</Label>
+                <div className="flex items-start gap-4">
+                  {imagePreview && (
+                    <div className="relative h-24 w-24 overflow-hidden rounded-lg border border-slate-200 bg-slate-50 flex-shrink-0">
+                      <img src={imagePreview} alt="Preview" className="h-full w-full object-contain" />
+                    </div>
+                  )}
+                  <Input id="image" type="file" accept="image/*" onChange={handleImageChange} className="flex-1" />
+                </div>
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="name">Product Name</Label>
                 <Input id="name" {...form.register('name')} />
                 {form.formState.errors.name && (
                   <p className="text-sm text-admin-danger">{form.formState.errors.name.message}</p>
                 )}
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="shortDescription">Short Description</Label>
                 <Input id="shortDescription" {...form.register('shortDescription')} />
@@ -97,7 +146,7 @@ export function ProductForm({ initialData, onSubmit, isLoading }: ProductFormPro
                   <Input id="comparePrice" type="number" step="0.01" {...form.register('comparePrice')} />
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="sku">SKU</Label>
@@ -108,7 +157,7 @@ export function ProductForm({ initialData, onSubmit, isLoading }: ProductFormPro
                   <Input id="barcode" {...form.register('barcode')} />
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="stock">Stock Quantity</Label>
@@ -140,7 +189,7 @@ export function ProductForm({ initialData, onSubmit, isLoading }: ProductFormPro
                         <SelectValue placeholder="Select status" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="published">Published</SelectItem>
+                        <SelectItem value="active">Active</SelectItem>
                         <SelectItem value="draft">Draft</SelectItem>
                         <SelectItem value="archived">Archived</SelectItem>
                       </SelectContent>
@@ -160,13 +209,20 @@ export function ProductForm({ initialData, onSubmit, isLoading }: ProductFormPro
                         <SelectValue placeholder="Select category" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="c1">Vodka</SelectItem>
-                        <SelectItem value="c2">Rum</SelectItem>
-                        <SelectItem value="c3">Whisky</SelectItem>
+                        {categories && categories.length > 0 ? (
+                          categories.map((c) => (
+                            <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="_none" disabled>No categories — add them first</SelectItem>
+                        )}
                       </SelectContent>
                     </Select>
                   )}
                 />
+                {form.formState.errors.categoryId && (
+                  <p className="text-sm text-admin-danger">{form.formState.errors.categoryId.message}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -180,13 +236,20 @@ export function ProductForm({ initialData, onSubmit, isLoading }: ProductFormPro
                         <SelectValue placeholder="Select brand" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="b1">8848</SelectItem>
-                        <SelectItem value="b2">Khukuri</SelectItem>
-                        <SelectItem value="b3">Yeti Distillery</SelectItem>
+                        {brands && brands.length > 0 ? (
+                          brands.map((b) => (
+                            <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="_none" disabled>No brands — add them first</SelectItem>
+                        )}
                       </SelectContent>
                     </Select>
                   )}
                 />
+                {form.formState.errors.brandId && (
+                  <p className="text-sm text-admin-danger">{form.formState.errors.brandId.message}</p>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -204,7 +267,7 @@ export function ProductForm({ initialData, onSubmit, isLoading }: ProductFormPro
                 <Label htmlFor="alcoholPercent">Alcohol % (Optional)</Label>
                 <Input id="alcoholPercent" type="number" step="0.1" {...form.register('alcoholPercent')} />
               </div>
-              
+
               <div className="flex items-center justify-between pt-4">
                 <div className="space-y-0.5">
                   <Label>Featured Product</Label>

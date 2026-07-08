@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '../store/useAuthStore';
 
 export default function AuthModal() {
-  const { isAuthModalOpen, authView, authMethod, otpStep, closeAuthModal, setAuthView, setAuthMethod, login, signup, sendOtp, verifyOtp } = useAuthStore();
+  const { error, isAuthModalOpen, authView, authMethod, otpStep, closeAuthModal, setAuthView, setAuthMethod, login, signup, sendOtp, verifyOtp } = useAuthStore();
   
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -27,13 +27,8 @@ export default function AuthModal() {
     if (authView === 'login') {
       login(email, password);
     } else {
-      signup(name, email, password);
+      signup(name, email, password, phone);
     }
-  };
-
-  const handlePhoneSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    sendOtp(phone, name);
   };
 
   const handleOtpSubmit = (e: React.FormEvent) => {
@@ -151,108 +146,60 @@ export default function AuthModal() {
                   </p>
                 </div>
                 
-                {/* Auth Method Toggle */}
-                <div className="flex p-1 bg-surface-container-low rounded-lg mb-8">
-                  <button 
-                    onClick={() => setAuthMethod('email')}
-                    className={`flex-1 py-2 font-label-sm uppercase tracking-widest text-xs rounded-md transition-all ${authMethod === 'email' ? 'bg-white shadow text-primary font-bold' : 'text-on-surface-variant hover:text-primary'}`}
-                  >
-                    Email
-                  </button>
-                  <button 
-                    onClick={() => setAuthMethod('phone')}
-                    className={`flex-1 py-2 font-label-sm uppercase tracking-widest text-xs rounded-md transition-all ${authMethod === 'phone' ? 'bg-white shadow text-primary font-bold' : 'text-on-surface-variant hover:text-primary'}`}
-                  >
-                    Phone
-                  </button>
-                </div>
+                {error && (
+                  <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-6 border border-red-200">
+                    {error}
+                  </div>
+                )}
                 
-                {/* Phone Form */}
-                {authMethod === 'phone' && (
-                  <form onSubmit={handlePhoneSubmit} className="space-y-5 animate-fade-in">
-                    {authView === 'signup' && (
+                {/* Main Auth Form */}
+                <form onSubmit={handleEmailSubmit} className="space-y-5 animate-fade-in mt-6">
+                  {authView === 'signup' && (
+                    <>
                       <div>
                         <label className="block font-label-sm uppercase tracking-widest text-on-surface-variant mb-2 text-xs">Full Name</label>
                         <input type="text" required value={name} onChange={(e) => setName(e.target.value)} className="w-full p-3.5 bg-surface-bright border border-stone-gray rounded-lg focus:border-secondary focus:ring-1 focus:ring-secondary outline-none transition-all font-body-md" placeholder="John Doe" />
                       </div>
-                    )}
-                    <div>
-                      <label className="block font-label-sm uppercase tracking-widest text-on-surface-variant mb-2 text-xs">Mobile Number</label>
-                      <div className="flex">
-                        <span className="inline-flex items-center px-4 bg-surface-container-low border border-r-0 border-stone-gray rounded-l-lg text-on-surface-variant font-body-md font-bold">
-                          +977
-                        </span>
-                        <input
-                          type="tel"
-                          required
-                          minLength={10}
-                          maxLength={10}
-                          pattern="[0-9]{10}"
-                          title="Please enter exactly 10 digits"
-                          value={phone}
-                          onChange={(e) => setPhone(e.target.value.replace(/[^0-9]/g, ''))}
-                          className="flex-1 w-full p-3.5 bg-surface-bright border border-stone-gray rounded-r-lg focus:border-secondary focus:ring-1 focus:ring-secondary outline-none transition-all font-body-md"
-                          placeholder="98XXXXXXXX"
-                        />
-                      </div>
-                    </div>
-                    
-                    <button type="submit" className="w-full py-4 mt-2 bg-primary text-white font-label-md uppercase tracking-widest rounded-lg hover:bg-primary/90 transition-all shadow-md active:scale-[0.98]">
-                      Send OTP
-                    </button>
-                  </form>
-                )}
-
-                {/* Email Form */}
-                {authMethod === 'email' && (
-                  <form onSubmit={handleEmailSubmit} className="space-y-5 animate-fade-in">
-                    {authView === 'signup' && (
                       <div>
-                        <label className="block font-label-sm uppercase tracking-widest text-on-surface-variant mb-2 text-xs">Full Name</label>
-                        <input type="text" required value={name} onChange={(e) => setName(e.target.value)} className="w-full p-3.5 bg-surface-bright border border-stone-gray rounded-lg focus:border-secondary focus:ring-1 focus:ring-secondary outline-none transition-all font-body-md" placeholder="John Doe" />
+                        <label className="block font-label-sm uppercase tracking-widest text-on-surface-variant mb-2 text-xs">Mobile Number</label>
+                        <div className="flex">
+                          <span className="inline-flex items-center px-4 bg-surface-container-low border border-r-0 border-stone-gray rounded-l-lg text-on-surface-variant font-body-md font-bold">
+                            +977
+                          </span>
+                          <input
+                            type="tel"
+                            required
+                            minLength={10}
+                            maxLength={10}
+                            pattern="[0-9]{10}"
+                            title="Please enter exactly 10 digits"
+                            value={phone}
+                            onChange={(e) => setPhone(e.target.value.replace(/[^0-9]/g, ''))}
+                            className="flex-1 w-full p-3.5 bg-surface-bright border border-stone-gray rounded-r-lg focus:border-secondary focus:ring-1 focus:ring-secondary outline-none transition-all font-body-md"
+                            placeholder="98XXXXXXXX"
+                          />
+                        </div>
                       </div>
-                    )}
-                    
-                    <div>
-                      <label className="block font-label-sm uppercase tracking-widest text-on-surface-variant mb-2 text-xs">Email Address</label>
-                      <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="w-full p-3.5 bg-surface-bright border border-stone-gray rounded-lg focus:border-secondary focus:ring-1 focus:ring-secondary outline-none transition-all font-body-md" placeholder="john@example.com" />
-                    </div>
-                    
-                    <div>
-                      <div className="flex justify-between mb-2">
-                        <label className="block font-label-sm uppercase tracking-widest text-on-surface-variant text-xs">Password</label>
-                        {authView === 'login' && <a href="#" className="font-label-sm text-xs text-secondary hover:underline">Forgot?</a>}
-                      </div>
-                      <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} className="w-full p-3.5 bg-surface-bright border border-stone-gray rounded-lg focus:border-secondary focus:ring-1 focus:ring-secondary outline-none transition-all font-body-md" placeholder="••••••••" />
-                    </div>
-                    
-                    <button type="submit" className="w-full py-4 mt-2 bg-primary text-white font-label-md uppercase tracking-widest rounded-lg hover:bg-primary/90 transition-all shadow-md active:scale-[0.98]">
-                      {authView === 'login' ? 'Sign In' : 'Create Account'}
-                    </button>
-                  </form>
-                )}
-                
-                <div className="mt-8">
-                  <div className="relative">
-                    <div className="absolute inset-0 flex items-center">
-                      <div className="w-full border-t border-stone-gray"></div>
-                    </div>
-                    <div className="relative flex justify-center text-sm">
-                      <span className="px-4 bg-white text-on-surface-variant font-label-sm uppercase tracking-widest text-xs">Or continue with</span>
-                    </div>
+                    </>
+                  )}
+                  
+                  <div>
+                    <label className="block font-label-sm uppercase tracking-widest text-on-surface-variant mb-2 text-xs">Email Address</label>
+                    <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="w-full p-3.5 bg-surface-bright border border-stone-gray rounded-lg focus:border-secondary focus:ring-1 focus:ring-secondary outline-none transition-all font-body-md" placeholder="john@example.com" />
                   </div>
                   
-                  <div className="mt-6 grid grid-cols-2 gap-4">
-                    <button className="flex justify-center items-center py-3 border border-stone-gray rounded-lg hover:bg-surface-container-low transition-colors font-label-sm">
-                      <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="h-5 w-5 mr-2" />
-                      Google
-                    </button>
-                    <button className="flex justify-center items-center py-3 border border-stone-gray rounded-lg hover:bg-surface-container-low transition-colors font-label-sm">
-                      <img src="https://www.svgrepo.com/show/475647/facebook-color.svg" alt="Facebook" className="h-5 w-5 mr-2" />
-                      Facebook
-                    </button>
+                  <div>
+                    <div className="flex justify-between mb-2">
+                      <label className="block font-label-sm uppercase tracking-widest text-on-surface-variant text-xs">Password</label>
+                      {authView === 'login' && <a href="#" className="font-label-sm text-xs text-secondary hover:underline">Forgot?</a>}
+                    </div>
+                    <input type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} className="w-full p-3.5 bg-surface-bright border border-stone-gray rounded-lg focus:border-secondary focus:ring-1 focus:ring-secondary outline-none transition-all font-body-md" placeholder="••••••••" />
                   </div>
-                </div>
+                  
+                  <button type="submit" className="w-full py-4 mt-2 bg-primary text-white font-label-md uppercase tracking-widest rounded-lg hover:bg-primary/90 transition-all shadow-md active:scale-[0.98]">
+                    {authView === 'login' ? 'Sign In' : 'Create Account'}
+                  </button>
+                </form>
                 
                 <div className="mt-8 text-center">
                   <p className="font-body-md text-sm text-on-surface-variant">

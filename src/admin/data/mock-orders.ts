@@ -1,4 +1,2 @@
-import type {  Order  } from '../types';
-
-export const mockOrders: Order[] = [];
-
+// Mock data stubs — replaced by Supabase stores
+export const mockOrders: any[] = [];

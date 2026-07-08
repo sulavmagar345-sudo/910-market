@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import Layout from './components/Layout';
 import Home from './pages/Home';
@@ -10,6 +10,7 @@ import AgeGate from './components/AgeGate';
 import AuthModal from './components/AuthModal';
 import OurStory from './pages/OurStory';
 import { AdminRoutes } from '@admin/routes';
+import { useAuthStore } from './store/useAuthStore';
 
 function Storefront() {
   return (
@@ -30,6 +31,11 @@ function Storefront() {
 
 function App() {
   const [introComplete, setIntroComplete] = useState(false);
+  const initializeAuth = useAuthStore(state => state.initialize);
+
+  useEffect(() => {
+    initializeAuth();
+  }, [initializeAuth]);
 
   return (
     <>
