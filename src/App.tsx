@@ -8,6 +8,7 @@ import ProductDetail from './pages/ProductDetail';
 import IntroAnimation from './components/IntroAnimation';
 import AgeGate from './components/AgeGate';
 import AuthModal from './components/AuthModal';
+import PromotionalBanner from './components/PromotionalBanner';
 import OurStory from './pages/OurStory';
 import { AdminRoutes } from '@admin/routes';
 import { useAuthStore } from './store/useAuthStore';
@@ -17,6 +18,7 @@ function Storefront() {
     <>
       <AgeGate />
       <AuthModal />
+      <PromotionalBanner />
       <Layout>
         <Routes>
           <Route path="/" element={<Home />} />

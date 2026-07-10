@@ -14,6 +14,7 @@ const InventoryPage = lazy(() => import('../pages/inventory/InventoryPage'));
 const SettingsPage = lazy(() => import('../pages/settings/SettingsPage'));
 const CategoriesPage = lazy(() => import('../pages/categories/CategoriesPage'));
 const BrandsPage = lazy(() => import('../pages/brands/BrandsPage'));
+const BannersPage = lazy(() => import('../pages/banners/BannersPage'));
 const ReviewsPage = lazy(() => import('../pages/reviews/ReviewsPage'));
 const CouponsPage = lazy(() => import('../pages/coupons/CouponsPage'));
 const DeliveryPage = lazy(() => import('../pages/delivery/DeliveryPage'));
@@ -48,6 +49,7 @@ export function AdminRoutes() {
             <Route path="settings" element={<SettingsPage />} />
             <Route path="categories" element={<CategoriesPage />} />
             <Route path="brands" element={<BrandsPage />} />
+            <Route path="banners" element={<BannersPage />} />
             <Route path="reviews" element={<ReviewsPage />} />
             <Route path="coupons" element={<CouponsPage />} />
             <Route path="delivery" element={<DeliveryPage />} />

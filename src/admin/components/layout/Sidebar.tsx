@@ -18,6 +18,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Award,
+  Image,
 } from 'lucide-react';
 import { cn } from '@admin/utils/cn';
 import { ScrollArea } from '../ui/ScrollArea';
@@ -56,6 +57,7 @@ const navGroups = [
   {
     label: 'Marketing',
     items: [
+      { title: 'Banners', icon: Image, href: '/admin/banners' },
       { title: 'Coupons', icon: Ticket, href: '/admin/coupons' },
       { title: 'Reviews', icon: MessageSquare, href: '/admin/reviews' },
     ],
