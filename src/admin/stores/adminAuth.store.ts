@@ -20,6 +20,7 @@ interface AdminAuthStore {
   checkIsAdmin: () => Promise<boolean>;
 }
 
+// Admin authentication store - handles admin-only login
 export const useAdminAuthStore = create<AdminAuthStore>((set) => ({
   adminUser: null,
   isLoading: true,
