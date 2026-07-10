@@ -70,16 +70,16 @@ export default function BannerFormModal({ banner, onClose }: BannerFormModalProp
   const uploadImage = async (file: File): Promise<string> => {
     const fileExt = file.name.split('.').pop();
     const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
-    const filePath = `banners/${fileName}`;
+    const filePath = fileName;
 
     const { error: uploadError } = await supabase.storage
-      .from('product-images')
+      .from('banners')
       .upload(filePath, file);
 
     if (uploadError) throw uploadError;
 
     const { data } = supabase.storage
-      .from('product-images')
+      .from('banners')
       .getPublicUrl(filePath);
 
     return data.publicUrl;
