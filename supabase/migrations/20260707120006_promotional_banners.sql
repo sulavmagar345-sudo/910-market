@@ -16,12 +16,13 @@ CREATE TABLE IF NOT EXISTS promotional_banners (
 );
 
 -- Add index for active banners query optimization
-CREATE INDEX idx_promotional_banners_active ON promotional_banners(is_active, priority DESC, start_date, end_date);
+CREATE INDEX IF NOT EXISTS idx_promotional_banners_active ON promotional_banners(is_active, priority DESC, start_date, end_date);
 
 -- Add RLS policies
 ALTER TABLE promotional_banners ENABLE ROW LEVEL SECURITY;
 
 -- Public can view active banners within date range
+DROP POLICY IF EXISTS "Anyone can view active banners" ON promotional_banners;
 CREATE POLICY "Anyone can view active banners"
   ON promotional_banners
   FOR SELECT
@@ -32,6 +33,7 @@ CREATE POLICY "Anyone can view active banners"
   );
 
 -- Admins can manage all banners
+DROP POLICY IF EXISTS "Admins can manage banners" ON promotional_banners;
 CREATE POLICY "Admins can manage banners"
   ON promotional_banners
   FOR ALL
@@ -43,7 +45,17 @@ CREATE POLICY "Admins can manage banners"
     )
   );
 
+-- Create or replace the update_updated_at_column function if it doesn't exist
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
 -- Create updated_at trigger
+DROP TRIGGER IF EXISTS update_promotional_banners_updated_at ON promotional_banners;
 CREATE TRIGGER update_promotional_banners_updated_at
   BEFORE UPDATE ON promotional_banners
   FOR EACH ROW
