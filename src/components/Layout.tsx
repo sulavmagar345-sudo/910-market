@@ -194,7 +194,7 @@ export default function Layout({ children }: LayoutProps) {
             <div className="relative group">
               <button 
                 aria-label="Profile" 
-                onClick={() => !user ? openAuthModal('login') : null}
+                onClick={() => (!user || user.role) ? openAuthModal('login') : null}
                 className="text-on-surface-variant hover:text-primary transition-colors hover:bg-pale-gold/10 p-2 rounded-full duration-300 flex items-center gap-2"
               >
                 <span className="material-symbols-outlined text-[24px]">person</span>
