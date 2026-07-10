@@ -34,12 +34,18 @@ export default function PromotionalBanner() {
       // Get dismissed banners from localStorage
       const dismissed = JSON.parse(localStorage.getItem(DISMISSED_BANNERS_KEY) || '[]');
 
-      // Fetch active banners that haven't been dismissed
-      const { data, error } = await supabase
+      // Build query
+      let query = supabase
         .from('promotional_banners')
         .select('*')
-        .eq('is_active', true)
-        .not('id', 'in', `(${dismissed.join(',') || 'null'})`)
+        .eq('is_active', true);
+
+      // Only add the 'not in' filter if there are dismissed banners
+      if (dismissed.length > 0) {
+        query = query.not('id', 'in', `(${dismissed.join(',')})`);
+      }
+
+      const { data, error } = await query
         .order('priority', { ascending: false })
         .order('created_at', { ascending: false })
         .limit(1)
