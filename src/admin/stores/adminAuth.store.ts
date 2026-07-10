@@ -20,7 +20,7 @@ interface AdminAuthStore {
   checkIsAdmin: () => Promise<boolean>;
 }
 
-export const useAdminAuthStore = create<AdminAuthStore>((set, get) => ({
+export const useAdminAuthStore = create<AdminAuthStore>((set) => ({
   adminUser: null,
   isLoading: true,
   error: null,
