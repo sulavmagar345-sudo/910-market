@@ -19,15 +19,35 @@ const BANNER_CHECK_INTERVAL = 60000; // Check for new banners every 60 seconds
 export default function PromotionalBanner() {
   const [activeBanner, setActiveBanner] = useState<Banner | null>(null);
   const [isVisible, setIsVisible] = useState(false);
+  const [ageVerified, setAgeVerified] = useState(false);
 
   useEffect(() => {
+    // Check if age is verified
+    const checkAgeVerification = () => {
+      const verified = sessionStorage.getItem('ageVerified');
+      setAgeVerified(verified === 'true');
+    };
+
+    // Check immediately
+    checkAgeVerification();
+
+    // Check periodically in case user verifies age
+    const ageCheckInterval = setInterval(checkAgeVerification, 1000);
+
+    return () => clearInterval(ageCheckInterval);
+  }, []);
+
+  useEffect(() => {
+    // Only fetch banners if age is verified
+    if (!ageVerified) return;
+
     fetchActiveBanner();
 
     // Set up periodic check for new banners
     const interval = setInterval(fetchActiveBanner, BANNER_CHECK_INTERVAL);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [ageVerified]);
 
   const fetchActiveBanner = async () => {
     try {
@@ -110,13 +130,13 @@ export default function PromotionalBanner() {
             onClick={() => handleDismiss(false)}
           />
 
-          {/* Banner Modal */}
+          {/* Banner Modal - Made Smaller */}
           <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
             transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-            className="relative w-full max-w-4xl bg-white rounded-2xl shadow-2xl overflow-hidden"
+            className="relative w-full max-w-3xl bg-white rounded-2xl shadow-2xl overflow-hidden"
           >
             {/* Close Button */}
             <button
@@ -127,7 +147,7 @@ export default function PromotionalBanner() {
               <X className="w-5 h-5" />
             </button>
 
-            {/* Banner Image */}
+            {/* Banner Image - Smaller */}
             <div 
               className="relative w-full cursor-pointer group"
               onClick={() => activeBanner.link_url && handleLinkClick()}
@@ -135,7 +155,7 @@ export default function PromotionalBanner() {
               <img
                 src={activeBanner.image_url}
                 alt={activeBanner.title}
-                className="w-full h-auto object-cover max-h-[70vh]"
+                className="w-full h-auto object-cover max-h-[50vh]"
                 onError={(e) => {
                   e.currentTarget.src =
                     'https://via.placeholder.com/1200x400?text=Promotional+Banner';
