@@ -4,156 +4,68 @@ import { useCartStore } from '../store/useCartStore';
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 
-const productDetails = [
-  {
-    id: 1,
-    category: 'Vodka',
-    name: '8848 Premium Vodka',
-    price: 'रू 2,200',
-    numericPrice: 2200,
-    bgUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAvmRYCJuGyE40jVct427zTtANBQZKMt4NCbz11WEhx6HEE9543gB5-9oZdsEdA70oWxZ6Sjd1eGMwnywnFvEQ3EY20S49N-IESF52eOTHBPoeELYkqFZ6Xovz1FtvAI0PJ1Laymbbzi_LAF12hwG0Fwnq9omUvOtvmymLxfSleO0pQUdyXsSlMrYIfbg2s5vZX8mPDnmKmXA_ySovZi4vvM6Mf7cBpsb0jASeWT-J3ijs_9ZHXDq97',
-    type: 'image',
-    origin: 'Nepal, Himalayas',
-    brand: '8848 Vodka',
-    abv: '40%',
-    volume: '750ML',
-    tagline: 'Nepal\'s Purest Wheat Vodka',
-    story: `Named after the world's highest peak, 8848 Premium Vodka embodies the purity and grandeur of Nepal's Himalayas. Crafted from select wheat grains grown in the fertile valleys beneath the towering peaks, every bottle carries the essence of altitude and clarity.`,
-    color: 'Crystal clear with a pristine aura.',
-    nose: 'Pristine aroma of fresh grain and mountain air.',
-    palate: 'Exceptionally clean, smooth finish with a subtle hint of wheat.',
-    finish: 'Crisp and refreshing.',
-  },
-  {
-    id: 2,
-    category: 'Rum',
-    name: 'Khukuri XXX Rum',
-    price: 'रू 1,850',
-    numericPrice: 1850,
-    bgUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCFCorgSAiCCKxziqu3ZtiQm_9_52RmQW1OkrhR-Xq24xbbPJflQNVjsdCK2IzX0FtTciq1nVT-7sfldSMWwoYD2IVVFeNkOk3OF6EGjUCcVO1Az2W21HzUjiix4yZcmG-AATVhDF2JMIthPGi8S0PENc18cLG_6ynBL5BUHa27aC-b0uCk_S_kT1Xzl09l6NJS2t4VtACjsbgDZ5SEmJ14vMD0ILS-EjJL83JkDsLDxpD8yZqcTWbE',
-    type: 'image',
-    origin: 'Terai, Nepal',
-    brand: 'Khukuri',
-    abv: '42.8%',
-    volume: '750ML',
-    tagline: 'The Spirit of the Gurkha',
-    story: `Khukuri XXX Rum draws its name from the legendary curved blade of the Gurkha warriors. Since 1959, this rum has been a symbol of Nepali pride – a spirit as bold, resilient, and uncompromising as the warriors who carried the Khukuri into battle across the world.`,
-    color: 'Deep amber with warm highlights.',
-    nose: 'Warm notes of caramel, vanilla, and dried fruits.',
-    palate: 'A robust body with deep molasses complexity.',
-    finish: 'Long, satisfying finish that warms from within.',
-  },
-  {
-    id: 3,
-    category: 'Vodka',
-    name: 'Ruslan Vodka',
-    price: 'रू 1,400',
-    numericPrice: 1400,
-    bgUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCJm86E1tLSppraf2oUixf2Pa5gb5jZ1jtXZYv47EjqyEIboB89kk2l60gnFPkal_RoqU85OIOLxCNzBeTwyQtycajAPLiMkdwo0JQYLu28L_UVwFUOYqhpIbNIwpJlzEw3bHqkVtCXEwTDVxoPLf2G52SzZA-csLFh2sfM630O7g1l9v4pQGpq1pJ8z-5dGA0qQVk_6J0obDg1go3Bm35hU8bbACMr0kajflgis0a8w-Mt6Qmbl4RD',
-    type: 'image',
-    origin: 'Kathmandu Valley, Nepal',
-    brand: 'Ruslan',
-    abv: '37.5%',
-    volume: '750ML',
-    tagline: 'Smooth. Pure. Unforgettable.',
-    story: `Ruslan Vodka is the beloved everyday spirit of Nepal, cherished for its exceptional smoothness and value. Born from a tradition of quality distillation in the Kathmandu Valley, Ruslan has become synonymous with celebration and camaraderie across the nation.`,
-    color: 'Pure and transparent.',
-    nose: 'Clean and soft with gentle floral notes.',
-    palate: 'Silky smooth with a balanced mouthfeel.',
-    finish: 'Warm, pleasant, and highly mixable.',
-  },
-  {
-    id: 4,
-    category: 'Wine',
-    name: 'Highland Reserve White',
-    price: 'रू 2,800',
-    numericPrice: 2800,
-    bgUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBJgu9c_Q4QGwZI5BGq_QtNhM594vJDCNLNTjyrcSPNNykKBmSBsaPZEyDIBu5cC_jbySnpKw3jDWzuS7WjLKhJcG_O01-FRML6oWnHR0y-QgoKggWmjBdVMzGlftUk9_Hb1B-yKkbN6yNjhmsWmVoWV7iyayHqn7JsW772-qmAeT9FSN6i7VQdkIBz1bJtRt0ZwHE9ZprhYXkKMmiI2bQeBmGcSFqQLRkQrGsHvNdq0iekqkoGCt_O',
-    type: 'image',
-    origin: 'Mustang, Nepal',
-    brand: 'Highland Reserve',
-    abv: '12%',
-    volume: '750ML',
-    tagline: 'Crafted at Altitude',
-    story: `Highland Reserve White Wine is Nepal's finest expression of viticulture at extreme altitude. Grown in the ancient terraced vineyards of Mustang at over 2,700 meters, the grapes experience dramatic diurnal temperature shifts that concentrate flavour.`,
-    color: 'Pale gold in the glass.',
-    nose: 'Aromas of green apple, white peach, and mineral freshness.',
-    palate: 'Bright acidity with complex orchard fruit layers.',
-    finish: 'Long, elegant, and crisp.',
-  },
-  {
-    id: 5,
-    category: 'Whisky',
-    name: 'Old Durbar Black',
-    price: 'रू 3,450',
-    numericPrice: 3450,
-    type: 'icon',
-    icon: 'liquor',
-    origin: 'Kathmandu, Nepal',
-    brand: 'Old Durbar',
-    abv: '43%',
-    volume: '750ML',
-    tagline: 'The Taste of Royal Heritage',
-    story: `Old Durbar Black takes its name from the historic Durbar Squares of Nepal's royal cities. This premium blended whisky honours the centuries-old tradition of Nepali craftsmanship, offering a smooth and complex spirit worthy of any royal court.`,
-    color: 'Rich mahogany with warm amber highlights.',
-    nose: 'Dried fruit, oak, and gentle spice.',
-    palate: 'Smooth and full-bodied malt sweetness.',
-    finish: 'Warming, lingering, and lightly peated.',
-  },
-];
-
 export default function ProductDetail() {
   const { id } = useParams();
   const { addItem } = useCartStore();
   const [added, setAdded] = useState(false);
   const [qty, setQty] = useState(1);
-
-  const [liveProduct, setLiveProduct] = useState<any>(null);
+  const [product, setProduct] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     async function fetchProduct() {
-      if (!isNaN(Number(id))) {
-        // It's a number, so it's a dummy product
-        setIsLoading(false);
-        return;
-      }
-
+      setIsLoading(true);
+      
       const { data, error } = await supabase
         .from('products')
-        .select('*, product_images(url), categories(name), brands(name)')
+        .select(`
+          *,
+          product_images(url, is_primary),
+          product_variants(id, price, name),
+          categories(name),
+          brands(name)
+        `)
         .eq('id', id)
         .single();
 
       if (!error && data) {
-        setLiveProduct({
+        // Get primary image or first image
+        const primaryImage = data.product_images?.find((img: any) => img.is_primary)?.url;
+        const firstImage = data.product_images?.[0]?.url;
+        const imageUrl = primaryImage || firstImage || '';
+        
+        // Get variant price or base price
+        const variantPrice = data.product_variants?.[0]?.price || data.price;
+        
+        setProduct({
           id: data.id,
-          category: data.categories?.name || 'Uncategorized',
+          category: data.categories?.name || 'Spirits',
           name: data.name,
-          price: `रू ${Number(data.price).toLocaleString()}`,
-          numericPrice: Number(data.price),
-          bgUrl: data.product_images?.[0]?.url || '',
-          type: data.product_images?.[0]?.url ? 'image' : 'icon',
-          origin: 'Local',
-          brand: data.brands?.name || 'Unknown',
-          abv: 'N/A',
+          price: `रू ${Number(variantPrice).toLocaleString()}`,
+          numericPrice: Number(variantPrice),
+          bgUrl: imageUrl,
+          type: imageUrl ? 'image' : 'icon',
+          icon: 'liquor',
+          origin: 'Nepal',
+          brand: data.brands?.name || 'Local',
+          abv: '40%', // You can add this field to your products table if needed
           volume: '750ML',
-          tagline: data.short_description || '',
-          story: data.description || '',
-          color: 'N/A',
-          nose: 'N/A',
-          palate: 'N/A',
-          finish: 'N/A',
+          tagline: data.short_description || 'Premium Quality Spirit',
+          story: data.description || 'A fine selection from our collection.',
+          color: 'Rich and distinctive.',
+          nose: 'Complex and inviting aroma.',
+          palate: 'Smooth and well-balanced taste.',
+          finish: 'Long and satisfying finish.',
         });
+      } else {
+        console.error('Error fetching product:', error);
       }
+      
       setIsLoading(false);
     }
 
     fetchProduct();
   }, [id]);
-
-  const mockProduct = productDetails.find((p) => p.id === Number(id));
-  const product = liveProduct || mockProduct;
 
   if (isLoading) {
     return (

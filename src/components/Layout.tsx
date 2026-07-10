@@ -198,10 +198,10 @@ export default function Layout({ children }: LayoutProps) {
                 className="text-on-surface-variant hover:text-primary transition-colors hover:bg-pale-gold/10 p-2 rounded-full duration-300 flex items-center gap-2"
               >
                 <span className="material-symbols-outlined text-[24px]">person</span>
-                {user && <span className="hidden md:block font-label-sm text-xs font-bold text-primary">{user.name}</span>}
+                {user && !user.role && <span className="hidden md:block font-label-sm text-xs font-bold text-primary">{user.name}</span>}
               </button>
               
-              {user && (
+              {user && !user.role && (
                 <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-stone-gray rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-[60] py-2">
                   <div className="px-4 py-2 border-b border-stone-gray/50 mb-2">
                     <p className="font-label-md text-primary font-bold">{user.name}</p>

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Bell, Search, Menu, ChevronRight } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '../ui/Button';
 import {
   DropdownMenu,
@@ -13,6 +13,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/Avatar';
 import { Badge } from '../ui/Badge';
 import { cn } from '@admin/utils/cn';
+import { useAdminAuthStore } from '../../stores/adminAuth.store';
 
 interface TopBarProps {
   onMenuClick?: () => void;
@@ -41,6 +42,22 @@ export function TopBar({ onMenuClick }: TopBarProps) {
   const [notifOpen, setNotifOpen] = useState(false);
   const breadcrumbs = useBreadcrumbs();
   const unreadCount = notifications.filter(n => n.unread).length;
+  const { adminUser, logoutAdmin } = useAdminAuthStore();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await logoutAdmin();
+    navigate('/admin/login');
+  };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
 
   return (
     <header className="flex h-14 items-center border-b border-slate-200 bg-white px-4 gap-4 flex-shrink-0">
@@ -148,20 +165,23 @@ export function TopBar({ onMenuClick }: TopBarProps) {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="h-9 gap-2 px-2 rounded-lg hover:bg-slate-100">
               <Avatar className="h-7 w-7">
-                <AvatarImage src="" alt="Admin" />
-                <AvatarFallback className="bg-admin-deep-forest text-white text-xs font-bold">SA</AvatarFallback>
+                <AvatarImage src="" alt={adminUser?.name || 'Admin'} />
+                <AvatarFallback className="bg-admin-deep-forest text-white text-xs font-bold">
+                  {adminUser ? getInitials(adminUser.name) : 'AD'}
+                </AvatarFallback>
               </Avatar>
               <div className="hidden md:flex flex-col items-start">
-                <span className="text-xs font-semibold text-slate-800 leading-none">Super Admin</span>
-                <span className="text-[10px] text-slate-400 mt-0.5">admin@910mart.com</span>
+                <span className="text-xs font-semibold text-slate-800 leading-none">{adminUser?.name || 'Admin'}</span>
+                <span className="text-[10px] text-slate-400 mt-0.5">{adminUser?.email || ''}</span>
               </div>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-56" align="end" forceMount>
             <DropdownMenuLabel className="font-normal">
               <div className="flex flex-col space-y-1">
-                <p className="text-sm font-semibold leading-none text-slate-900">Super Admin</p>
-                <p className="text-xs leading-none text-slate-500">admin@910mart.com</p>
+                <p className="text-sm font-semibold leading-none text-slate-900">{adminUser?.name || 'Admin'}</p>
+                <p className="text-xs leading-none text-slate-500">{adminUser?.email || ''}</p>
+                <p className="text-[10px] leading-none text-admin-deep-forest mt-1 font-medium uppercase">{adminUser?.role || ''}</p>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
@@ -170,7 +190,10 @@ export function TopBar({ onMenuClick }: TopBarProps) {
             </DropdownMenuItem>
             <DropdownMenuItem>Preferences</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-red-600 focus:text-red-600 focus:bg-red-50">
+            <DropdownMenuItem 
+              className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"
+              onClick={handleLogout}
+            >
               Log out
             </DropdownMenuItem>
           </DropdownMenuContent>

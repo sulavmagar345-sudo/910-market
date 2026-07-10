@@ -1,8 +1,13 @@
 import { Navigate, Outlet } from 'react-router-dom';
-import { useAuthStore } from '../../store/useAuthStore';
+import { useAdminAuthStore } from '../stores/adminAuth.store';
+import { useEffect } from 'react';
 
 export function AdminProtectedRoute() {
-  const { user, isLoading } = useAuthStore();
+  const { adminUser, isLoading, initializeAdmin } = useAdminAuthStore();
+
+  useEffect(() => {
+    initializeAdmin();
+  }, [initializeAdmin]);
 
   if (isLoading) {
     return (
@@ -12,10 +17,8 @@ export function AdminProtectedRoute() {
     );
   }
 
-  // Check if authenticated and has admin-like role
-  const isAdmin = user && ['superadmin', 'admin', 'manager', 'support'].includes(user.role || '');
-
-  if (!isAdmin) {
+  // Check if user is an admin
+  if (!adminUser) {
     return <Navigate to="/admin/login" replace />;
   }
 

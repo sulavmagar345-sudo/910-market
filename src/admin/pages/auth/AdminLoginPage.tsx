@@ -1,20 +1,23 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuthStore } from '../../../store/useAuthStore';
+import { useAdminAuthStore } from '../../stores/adminAuth.store';
 import { Wine } from 'lucide-react';
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { login, isLoading, error } = useAuthStore();
+  const { loginAdmin, isLoading, error } = useAdminAuthStore();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await login(email, password);
-    // After login, we rely on the protected route to either let them through or kick them out.
-    // If successful, navigate to admin index
-    navigate('/admin');
+    await loginAdmin(email, password);
+    
+    // Check if login was successful (adminUser will be set)
+    const { adminUser } = useAdminAuthStore.getState();
+    if (adminUser) {
+      navigate('/admin');
+    }
   };
 
   return (
