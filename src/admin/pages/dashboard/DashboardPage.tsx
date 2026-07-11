@@ -11,6 +11,7 @@ import { formatCurrency, formatNumber } from '../../utils/format';
 import { DollarSign, CreditCard, Users, Target, Clock, AlertTriangle, TrendingUp, UserPlus, FileBarChart } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { pageVariants, staggerContainer } from '../../animations/variants';
+import { generateDashboardReport } from '../../utils/pdfGenerator';
 
 export default function DashboardPage() {
   const { summary, extendedSummary, sparklines, recentActivity, isLoading, fetchDashboardData } = useDashboardStore();
@@ -18,6 +19,12 @@ export default function DashboardPage() {
   useEffect(() => {
     fetchDashboardData();
   }, [fetchDashboardData]);
+
+  const handleDownloadReport = () => {
+    if (summary && extendedSummary && recentActivity) {
+      generateDashboardReport(summary, extendedSummary, recentActivity);
+    }
+  };
 
   if (isLoading || !summary || !extendedSummary || !sparklines) {
     return (
@@ -46,7 +53,11 @@ export default function DashboardPage() {
           </p>
         </div>
         <div className="flex space-x-3">
-          <Button variant="outline" className="h-9 gap-2 shadow-sm bg-white">
+          <Button 
+            variant="outline" 
+            className="h-9 gap-2 shadow-sm bg-white"
+            onClick={handleDownloadReport}
+          >
             <FileBarChart className="h-4 w-4 text-slate-500" />
             Download Report
           </Button>
