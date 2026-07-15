@@ -1,4 +1,4 @@
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useState, useRef, useCallback } from 'react';
 import { useCartStore } from '../store/useCartStore';
 import { useAuthStore } from '../store/useAuthStore';
 import CartSidebar from './CartSidebar';
@@ -66,19 +66,23 @@ const navCategories = [
   },
 ];
 
-function NavItem({ label, items }: { label: string; items: string[] }) {
+function NavItem({ label, items, isDragging }: { label: string; items: string[]; isDragging?: React.MutableRefObject<boolean> }) {
   const [open, setOpen] = useState(false);
   const hasDropdown = items.length > 0;
 
   return (
     <li
-      className="relative"
+      className="relative shrink-0"
       onMouseEnter={() => setOpen(true)}
       onMouseLeave={() => setOpen(false)}
     >
       <button 
-        onClick={() => setOpen(!open)}
-        className="flex items-center gap-1 font-label-md uppercase tracking-widest text-on-surface-variant hover:text-primary transition-colors py-1 whitespace-nowrap"
+        onClick={() => {
+          // suppress open/close if user was dragging
+          if (isDragging?.current) return;
+          setOpen(!open);
+        }}
+        className="flex items-center gap-1 font-label-md uppercase tracking-widest text-on-surface-variant hover:text-primary transition-colors py-1 whitespace-nowrap text-[11px] md:text-xs"
       >
         {label}
         {hasDropdown && (
@@ -123,6 +127,33 @@ export default function Layout({ children }: LayoutProps) {
 
   const isCheckout = location.pathname === '/checkout';
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
+
+  // Drag-scroll for the nav strip
+  const navScrollRef = useRef<HTMLUListElement>(null);
+  const isDragging = useRef(false);
+  const startX = useRef(0);
+  const scrollLeft = useRef(0);
+
+  const onMouseDown = useCallback((e: React.MouseEvent) => {
+    isDragging.current = false;
+    startX.current = e.pageX - (navScrollRef.current?.offsetLeft ?? 0);
+    scrollLeft.current = navScrollRef.current?.scrollLeft ?? 0;
+    navScrollRef.current?.classList.add('cursor-grabbing');
+    // listen on window so drag works even if mouse leaves the element
+    const onMouseMove = (ev: MouseEvent) => {
+      const x = ev.pageX - (navScrollRef.current?.offsetLeft ?? 0);
+      const walk = (x - startX.current) * 1.2;
+      if (Math.abs(walk) > 4) isDragging.current = true;
+      if (navScrollRef.current) navScrollRef.current.scrollLeft = scrollLeft.current - walk;
+    };
+    const onMouseUp = () => {
+      navScrollRef.current?.classList.remove('cursor-grabbing');
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+  }, []);
 
   return (
     <>
@@ -252,10 +283,20 @@ export default function Layout({ children }: LayoutProps) {
 
         {/* Sub Navigation - HIDDEN on checkout */}
         {!isCheckout && (
-          <div className="border-t border-stone-gray bg-surface-bright py-2.5">
-            <ul className="flex items-center gap-8 md:gap-10 max-w-[1280px] mx-auto px-4 md:px-16 overflow-x-auto md:overflow-visible whitespace-nowrap scrollbar-hide">
+          <div className="border-t border-stone-gray bg-surface-bright py-2.5 relative">
+            {/* Left fade edge */}
+            <div className="pointer-events-none absolute left-0 top-0 h-full w-12 bg-gradient-to-r from-surface-bright to-transparent z-10" />
+            {/* Right fade edge */}
+            <div className="pointer-events-none absolute right-0 top-0 h-full w-12 bg-gradient-to-l from-surface-bright to-transparent z-10" />
+
+            <ul
+              ref={navScrollRef}
+              onMouseDown={onMouseDown}
+              className="flex items-center gap-6 md:gap-8 max-w-[1280px] mx-auto px-6 md:px-16 overflow-x-auto whitespace-nowrap select-none cursor-grab scrollbar-hide"
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            >
               {navCategories.map((cat) => (
-                <NavItem key={cat.label} label={cat.label} items={cat.items} />
+                <NavItem key={cat.label} label={cat.label} items={cat.items} isDragging={isDragging} />
               ))}
             </ul>
           </div>
