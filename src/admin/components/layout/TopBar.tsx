@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Bell, Search, Menu, ChevronRight } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Bell, Search, Menu, ChevronRight, CheckCircle2 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '../ui/Button';
 import {
@@ -14,18 +14,13 @@ import { Avatar, AvatarFallback, AvatarImage } from '../ui/Avatar';
 import { Badge } from '../ui/Badge';
 import { cn } from '@admin/utils/cn';
 import { useAdminAuthStore } from '../../stores/adminAuth.store';
+import { useNotificationsStore } from '../../stores/notifications.store';
+import { formatDistanceToNow } from 'date-fns';
 
 interface TopBarProps {
   onMenuClick?: () => void;
   sidebarCollapsed?: boolean;
 }
-
-const notifications = [
-  { id: '1', title: 'New Order', message: 'ORD-910-0124 — Sita Sharma (रू 4,500)', time: '2m ago', unread: true, type: 'order' },
-  { id: '2', title: 'Low Stock Alert', message: '8848 Premium Vodka — only 5 left', time: '1h ago', unread: true, type: 'warning' },
-  { id: '3', title: 'New Review', message: 'Ram Krishna rated Old Durbar ⭐⭐⭐⭐⭐', time: '2h ago', unread: true, type: 'review' },
-  { id: '4', title: 'Payment Received', message: 'रू 12,600 via eSewa — ORD-910-0121', time: '8h ago', unread: false, type: 'payment' },
-];
 
 // Build breadcrumb from pathname
 function useBreadcrumbs() {
@@ -41,9 +36,27 @@ function useBreadcrumbs() {
 export function TopBar({ onMenuClick }: TopBarProps) {
   const [notifOpen, setNotifOpen] = useState(false);
   const breadcrumbs = useBreadcrumbs();
-  const unreadCount = notifications.filter(n => n.unread).length;
   const { adminUser, logoutAdmin } = useAdminAuthStore();
   const navigate = useNavigate();
+
+  const {
+    notifications,
+    unreadCount,
+    fetchNotifications,
+    subscribeToNotifications,
+    unsubscribeFromNotifications,
+    markAsRead,
+    markAllAsRead,
+  } = useNotificationsStore();
+
+  useEffect(() => {
+    fetchNotifications();
+    subscribeToNotifications();
+
+    return () => {
+      unsubscribeFromNotifications();
+    };
+  }, []);
 
   const handleLogout = async () => {
     await logoutAdmin();
@@ -57,6 +70,14 @@ export function TopBar({ onMenuClick }: TopBarProps) {
       .join('')
       .toUpperCase()
       .slice(0, 2);
+  };
+
+  const handleNotificationClick = (id: string, link?: string) => {
+    markAsRead(id);
+    if (link) {
+      navigate(link);
+      setNotifOpen(false);
+    }
   };
 
   return (
@@ -125,37 +146,47 @@ export function TopBar({ onMenuClick }: TopBarProps) {
           <DropdownMenuContent className="w-80" align="end" forceMount>
             <div className="flex items-center justify-between px-3 py-2 border-b border-slate-100">
               <DropdownMenuLabel className="p-0 text-sm font-semibold">Notifications</DropdownMenuLabel>
-              {unreadCount > 0 && (
-                <Badge variant="outline" className="text-[10px] px-1.5 h-5 font-medium text-slate-500">
-                  {unreadCount} new
-                </Badge>
-              )}
+              <div className="flex items-center gap-2">
+                {unreadCount > 0 && (
+                  <button 
+                    onClick={() => markAllAsRead()}
+                    className="text-[10px] flex items-center gap-1 text-slate-500 hover:text-admin-deep-forest transition-colors"
+                  >
+                    <CheckCircle2 className="h-3 w-3" />
+                    Mark all read
+                  </button>
+                )}
+              </div>
             </div>
             <div className="max-h-80 overflow-y-auto">
-              {notifications.map((notif) => (
-                <div
-                  key={notif.id}
-                  className={cn(
-                    'flex items-start gap-3 px-3 py-3 border-b border-slate-50 last:border-0 hover:bg-slate-50 cursor-pointer transition-colors',
-                    notif.unread && 'bg-blue-50/30'
-                  )}
-                >
-                  <div className={cn(
-                    'mt-0.5 h-2 w-2 rounded-full flex-shrink-0',
-                    notif.unread ? 'bg-blue-500' : 'bg-transparent'
-                  )} />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-slate-800">{notif.title}</p>
-                    <p className="text-xs text-slate-500 mt-0.5 truncate">{notif.message}</p>
-                    <p className="text-[10px] text-slate-400 mt-1">{notif.time}</p>
-                  </div>
+              {notifications.length === 0 ? (
+                <div className="px-4 py-6 text-center text-sm text-slate-500">
+                  No notifications yet.
                 </div>
-              ))}
-            </div>
-            <div className="px-3 py-2 border-t border-slate-100">
-              <button className="text-xs font-medium text-admin-deep-forest hover:underline w-full text-center">
-                View all notifications
-              </button>
+              ) : (
+                notifications.map((notif) => (
+                  <div
+                    key={notif.id}
+                    onClick={() => handleNotificationClick(notif.id, notif.link)}
+                    className={cn(
+                      'flex items-start gap-3 px-3 py-3 border-b border-slate-50 last:border-0 hover:bg-slate-50 cursor-pointer transition-colors',
+                      !notif.isRead && 'bg-blue-50/30'
+                    )}
+                  >
+                    <div className={cn(
+                      'mt-0.5 h-2 w-2 rounded-full flex-shrink-0',
+                      !notif.isRead ? 'bg-blue-500' : 'bg-transparent'
+                    )} />
+                    <div className="flex-1 min-w-0">
+                      <p className={cn("text-sm text-slate-800", !notif.isRead ? "font-semibold" : "font-medium")}>{notif.title}</p>
+                      <p className="text-xs text-slate-500 mt-0.5">{notif.message}</p>
+                      <p className="text-[10px] text-slate-400 mt-1">
+                        {formatDistanceToNow(new Date(notif.createdAt), { addSuffix: true })}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </DropdownMenuContent>
         </DropdownMenu>
