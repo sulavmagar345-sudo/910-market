@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useCouponsStore } from '../../stores/coupons.store';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
-import { Badge } from '../../components/ui/Badge';
+
 import {
   Dialog,
   DialogContent,
@@ -11,7 +11,7 @@ import {
   DialogTrigger,
   DialogFooter,
 } from '../../components/ui/Dialog';
-import { Search, Plus, Trash2, Ticket, Check, X, Calendar, Percent, DollarSign } from 'lucide-react';
+import { Search, Plus, Trash2, Ticket, Check, X, Calendar } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
 

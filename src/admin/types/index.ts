@@ -249,7 +249,7 @@ export interface Review {
 export type CouponType = 'percentage' | 'fixed';
 export type CouponStatus = 'active' | 'inactive' | 'expired';
 
-export interface Coupon {
+export interface CouponLegacy {
   id: string;
   code: string;
   type: CouponType;
@@ -470,6 +470,6 @@ export interface Coupon {
   usage_limit?: number;
   usage_count: number;
   is_active: boolean;
-  createdAt?: string;
-  updatedAt?: string;
+  created_at?: string;
+  updated_at?: string;
 }

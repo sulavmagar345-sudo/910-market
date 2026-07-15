@@ -7,7 +7,7 @@ interface CouponsStore {
   isLoading: boolean;
   error: string | null;
   fetchCoupons: () => Promise<void>;
-  createCoupon: (coupon: Omit<Coupon, 'id' | 'usage_count'>) => Promise<void>;
+  createCoupon: (coupon: Omit<Coupon, 'id' | 'usage_count' | 'created_at' | 'updated_at'>) => Promise<void>;
   updateCouponStatus: (id: string, isActive: boolean) => Promise<void>;
   deleteCoupon: (id: string) => Promise<void>;
 }
