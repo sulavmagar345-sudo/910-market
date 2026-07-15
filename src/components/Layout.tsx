@@ -60,6 +60,10 @@ const navCategories = [
     label: 'Mixers', 
     items: ['Tonic Water', 'Ginger Ale', 'Club Soda', 'Juices', 'Syrups & Bitters', 'Cocktail Mixes'] 
   },
+  {
+    label: 'Groceries',
+    items: ['Snacks & Chips', 'Chocolates & Sweets', 'Energy Drinks', 'Soft Drinks & Juices', 'Soda & Water']
+  },
 ];
 
 function NavItem({ label, items }: { label: string; items: string[] }) {
@@ -249,7 +253,7 @@ export default function Layout({ children }: LayoutProps) {
         {/* Sub Navigation - HIDDEN on checkout */}
         {!isCheckout && (
           <div className="border-t border-stone-gray bg-surface-bright py-2.5">
-            <ul className="flex items-center gap-8 md:gap-10 max-w-[1280px] mx-auto px-4 md:px-16 overflow-x-auto whitespace-nowrap scrollbar-hide">
+            <ul className="flex items-center gap-8 md:gap-10 max-w-[1280px] mx-auto px-4 md:px-16 overflow-x-auto md:overflow-visible whitespace-nowrap scrollbar-hide">
               {navCategories.map((cat) => (
                 <NavItem key={cat.label} label={cat.label} items={cat.items} />
               ))}

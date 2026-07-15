@@ -14,6 +14,72 @@ export default function Checkout() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
 
+  // Coupon state
+  const [couponCode, setCouponCode] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; type: string; value: number; discount: number } | null>(null);
+  const [couponError, setCouponError] = useState('');
+  const [couponLoading, setCouponLoading] = useState(false);
+
+  const subtotal = getTotal();
+  const discountAmount = appliedCoupon?.discount ?? 0;
+  const finalTotal = Math.max(0, subtotal - discountAmount);
+
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) return;
+    setCouponLoading(true);
+    setCouponError('');
+    setAppliedCoupon(null);
+
+    const { data, error } = await supabase
+      .from('coupons')
+      .select('*')
+      .eq('code', couponCode.trim().toUpperCase())
+      .eq('is_active', true)
+      .single();
+
+    setCouponLoading(false);
+
+    if (error || !data) {
+      setCouponError('Invalid or expired coupon code.');
+      return;
+    }
+
+    // Check expiry
+    if (data.end_date && new Date(data.end_date) < new Date()) {
+      setCouponError('This coupon has expired.');
+      return;
+    }
+
+    // Check min order amount
+    if (data.min_order_amount && subtotal < data.min_order_amount) {
+      setCouponError(`Minimum order amount of रू ${Number(data.min_order_amount).toLocaleString()} required.`);
+      return;
+    }
+
+    // Check usage limit
+    if (data.usage_limit !== null && data.usage_count >= data.usage_limit) {
+      setCouponError('This coupon has reached its usage limit.');
+      return;
+    }
+
+    // Calculate discount
+    let discount = 0;
+    if (data.type === 'percentage') {
+      discount = Math.round(subtotal * (data.value / 100));
+      if (data.max_discount_amount) discount = Math.min(discount, data.max_discount_amount);
+    } else {
+      discount = Math.min(data.value, subtotal);
+    }
+
+    setAppliedCoupon({ code: data.code, type: data.type, value: data.value, discount });
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponCode('');
+    setCouponError('');
+  };
+
   const handlePayment = async () => {
     setIsSubmitting(true);
     try {
@@ -212,7 +278,7 @@ export default function Checkout() {
                     </>
                   ) : (
                     <>
-                      <span className="material-symbols-outlined mr-2">lock</span> Pay रू {getTotal().toLocaleString()}
+                      <span className="material-symbols-outlined mr-2">lock</span> Pay रू {finalTotal.toLocaleString()}
                     </>
                   )}
                 </button>
@@ -276,17 +342,63 @@ export default function Checkout() {
             </div>
             
             <div className="border-t border-stone-gray pt-4 space-y-3">
+
+              {/* Coupon Code Input */}
+              {!appliedCoupon ? (
+                <div className="mb-4">
+                  <label className="block font-label-sm uppercase tracking-widest text-on-surface-variant mb-2 text-xs">
+                    Discount Code
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={couponCode}
+                      onChange={e => { setCouponCode(e.target.value); setCouponError(''); }}
+                      onKeyDown={e => e.key === 'Enter' && handleApplyCoupon()}
+                      placeholder="Enter coupon code"
+                      className="flex-1 px-3 py-2 text-sm border border-stone-gray rounded focus:border-secondary focus:ring-1 focus:ring-secondary outline-none uppercase"
+                    />
+                    <button
+                      onClick={handleApplyCoupon}
+                      disabled={couponLoading || !couponCode.trim()}
+                      className="px-3 py-2 bg-primary text-white text-xs font-label-md rounded uppercase tracking-wider hover:bg-primary/90 transition-colors disabled:opacity-50 shrink-0"
+                    >
+                      {couponLoading ? '...' : 'Apply'}
+                    </button>
+                  </div>
+                  {couponError && (
+                    <p className="text-red-500 text-xs mt-1.5">{couponError}</p>
+                  )}
+                </div>
+              ) : (
+                <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded px-3 py-2 mb-2">
+                  <div>
+                    <span className="text-xs font-bold text-green-700 uppercase tracking-wider">🎟 {appliedCoupon.code}</span>
+                    <p className="text-xs text-green-600 mt-0.5">
+                      {appliedCoupon.type === 'percentage' ? `${appliedCoupon.value}% off` : `रू ${appliedCoupon.value} off`} applied
+                    </p>
+                  </div>
+                  <button onClick={handleRemoveCoupon} className="text-red-400 hover:text-red-600 text-xs font-bold ml-4">✕ Remove</button>
+                </div>
+              )}
+
               <div className="flex justify-between font-body-md text-sm text-on-surface-variant">
                 <span>Subtotal</span>
-                <span>रू {getTotal().toLocaleString()}</span>
+                <span>रू {subtotal.toLocaleString()}</span>
               </div>
+              {appliedCoupon && (
+                <div className="flex justify-between font-body-md text-sm text-green-600">
+                  <span>Discount ({appliedCoupon.code})</span>
+                  <span>- रू {appliedCoupon.discount.toLocaleString()}</span>
+                </div>
+              )}
               <div className="flex justify-between font-body-md text-sm text-on-surface-variant">
                 <span>Shipping</span>
                 <span>Calculated next step</span>
               </div>
               <div className="flex justify-between items-center border-t border-stone-gray pt-4 mt-2">
                 <span className="font-headline-md text-lg text-primary font-bold">Total</span>
-                <span className="font-headline-md text-2xl text-secondary font-bold">रू {getTotal().toLocaleString()}</span>
+                <span className="font-headline-md text-2xl text-secondary font-bold">रू {finalTotal.toLocaleString()}</span>
               </div>
             </div>
             

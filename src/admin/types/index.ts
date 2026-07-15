@@ -456,3 +456,20 @@ export interface FilterParams {
   sortOrder?: 'asc' | 'desc';
   [key: string]: string | number | boolean | undefined;
 }
+
+// ─── Coupon ────────────────────────────────────────────────────────────────
+export interface Coupon {
+  id: string;
+  code: string;
+  type: 'percentage' | 'fixed';
+  value: number;
+  min_order_amount?: number;
+  max_discount_amount?: number;
+  start_date?: string;
+  end_date?: string;
+  usage_limit?: number;
+  usage_count: number;
+  is_active: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
