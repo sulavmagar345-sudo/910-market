@@ -11,7 +11,6 @@ import {
   DropdownMenuTrigger,
 } from '../ui/DropdownMenu';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/Avatar';
-import { Badge } from '../ui/Badge';
 import { cn } from '@admin/utils/cn';
 import { useAdminAuthStore } from '../../stores/adminAuth.store';
 import { useNotificationsStore } from '../../stores/notifications.store';

@@ -116,7 +116,7 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
   },
 
   subscribeToNotifications: () => {
-    const channel = supabase
+    supabase
       .channel('admin_notifications_changes')
       .on(
         'postgres_changes',
