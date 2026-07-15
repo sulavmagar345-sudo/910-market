@@ -66,19 +66,31 @@ const navCategories = [
   },
 ];
 
+import { createPortal } from 'react-dom';
+
 function NavItem({ label, items, isDragging }: { label: string; items: string[]; isDragging?: React.MutableRefObject<boolean> }) {
   const [open, setOpen] = useState(false);
+  const [coords, setCoords] = useState({ x: 0, y: 0 });
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const hasDropdown = items.length > 0;
+
+  const handleMouseEnter = () => {
+    if (buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setCoords({ x: rect.left, y: rect.bottom });
+    }
+    setOpen(true);
+  };
 
   return (
     <li
       className="relative shrink-0"
-      onMouseEnter={() => setOpen(true)}
+      onMouseEnter={handleMouseEnter}
       onMouseLeave={() => setOpen(false)}
     >
       <button 
+        ref={buttonRef}
         onClick={() => {
-          // suppress open/close if user was dragging
           if (isDragging?.current) return;
           setOpen(!open);
         }}
@@ -92,28 +104,30 @@ function NavItem({ label, items, isDragging }: { label: string; items: string[];
         )}
       </button>
 
-      {hasDropdown && (
+      {hasDropdown && open && createPortal(
         <AnimatePresence>
-          {open && (
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 8 }}
-              transition={{ duration: 0.18, ease: 'easeOut' }}
-              className="absolute top-full left-0 mt-2 bg-white border border-stone-gray rounded-lg shadow-xl py-2 min-w-[200px] z-[80]"
-            >
-              {items.map((item) => (
-                <Link
-                  key={item}
-                  to="/"
-                  className="block px-5 py-2.5 font-body-md text-sm text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors whitespace-nowrap"
-                >
-                  {item}
-                </Link>
-              ))}
-            </motion.div>
-          )}
-        </AnimatePresence>
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8 }}
+            transition={{ duration: 0.18, ease: 'easeOut' }}
+            style={{ position: 'fixed', top: coords.y + 8, left: coords.x }}
+            className="bg-white border border-stone-gray rounded-lg shadow-xl py-2 min-w-[200px] z-[9999]"
+            onMouseEnter={() => setOpen(true)}
+            onMouseLeave={() => setOpen(false)}
+          >
+            {items.map((item) => (
+              <Link
+                key={item}
+                to="/"
+                className="block px-5 py-2.5 font-body-md text-sm text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors whitespace-nowrap"
+              >
+                {item}
+              </Link>
+            ))}
+          </motion.div>
+        </AnimatePresence>,
+        document.body
       )}
     </li>
   );
