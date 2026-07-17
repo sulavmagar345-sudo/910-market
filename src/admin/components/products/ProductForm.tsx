@@ -10,6 +10,22 @@ import { Switch } from '../ui/Switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/Select';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
 
+// Categories that use ML/L units and have alcohol percentage
+const ALCOHOL_CATEGORY_SLUGS = ['whisky', 'vodka', 'beer', 'wine', 'rum', 'brandy-cognac', 'gin', 'tequila', 'liqueurs', 'sake-asian', 'cider-rtd'];
+
+const VOLUME_UNITS = [
+  { value: 'ML', label: 'ML (millilitre)' },
+  { value: 'L', label: 'L (litre)' },
+  { value: 'g', label: 'g (gram)' },
+  { value: 'kg', label: 'kg (kilogram)' },
+  { value: 'Pcs', label: 'Pcs (pieces)' },
+  { value: 'Pack', label: 'Pack' },
+  { value: 'Bottle', label: 'Bottle' },
+  { value: 'Can', label: 'Can' },
+  { value: 'Sachet', label: 'Sachet' },
+  { value: 'Pair', label: 'Pair' },
+];
+
 const productSchema = z.object({
   name: z.string().min(1, 'Product name is required'),
   sku: z.string().min(1, 'SKU is required'),
@@ -18,7 +34,8 @@ const productSchema = z.object({
   comparePrice: z.coerce.number().optional(),
   stock: z.coerce.number().min(0, 'Stock cannot be negative'),
   lowStockThreshold: z.coerce.number().min(0),
-  volume: z.string().min(1, 'Volume is required'),
+  volumeQty: z.coerce.number().min(0, 'Quantity required'),
+  volumeUnit: z.string().min(1, 'Unit is required'),
   alcoholPercent: z.coerce.number().optional(),
   categoryId: z.string().min(1, 'Category is required'),
   brandId: z.string().min(1, 'Brand is required'),
@@ -40,6 +57,7 @@ export interface ProductFormProps {
 
 export function ProductForm({ initialData, categories, brands, onSubmit, isLoading }: ProductFormProps) {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isAlcohol, setIsAlcohol] = useState(true);
 
   useEffect(() => {
     try {
@@ -69,20 +87,35 @@ export function ProductForm({ initialData, categories, brands, onSubmit, isLoadi
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema) as any,
-    defaultValues: initialData || {
+    defaultValues: initialData ? {
+      ...initialData,
+      volumeQty: parseFloat(initialData.volume?.split(' ')?.[0] || '750') || 750,
+      volumeUnit: initialData.volume?.split(' ')?.[1] || 'ML',
+    } : {
       name: '',
       sku: '',
       barcode: '',
       price: 0,
       stock: 0,
       lowStockThreshold: 10,
-      volume: '750 ML',
+      volumeQty: 750,
+      volumeUnit: 'ML',
       status: 'draft',
       isFeatured: false,
       shortDescription: '',
       description: '',
     },
   });
+
+  // Watch categoryId to toggle alcohol fields
+  const watchedCategoryId = form.watch('categoryId');
+  useEffect(() => {
+    if (watchedCategoryId && categories) {
+      const cat = categories.find(c => c.id === watchedCategoryId);
+      const slug = cat?.slug || '';
+      setIsAlcohol(ALCOHOL_CATEGORY_SLUGS.includes(slug));
+    }
+  }, [watchedCategoryId, categories]);
 
   return (
     <form
@@ -260,13 +293,43 @@ export function ProductForm({ initialData, categories, brands, onSubmit, isLoadi
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="volume">Volume (e.g., 750 ML)</Label>
-                <Input id="volume" {...form.register('volume')} />
+                <Label>Size / Quantity</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="volumeQty"
+                    type="number"
+                    step="0.1"
+                    placeholder="e.g. 750"
+                    className="w-24 flex-shrink-0"
+                    {...form.register('volumeQty')}
+                  />
+                  <Controller
+                    control={form.control}
+                    name="volumeUnit"
+                    render={({ field }) => (
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Unit" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {VOLUME_UNITS.map(u => (
+                            <SelectItem key={u.value} value={u.value}>{u.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                </div>
+                {form.formState.errors.volumeQty && (
+                  <p className="text-sm text-admin-danger">{form.formState.errors.volumeQty.message}</p>
+                )}
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="alcoholPercent">Alcohol % (Optional)</Label>
-                <Input id="alcoholPercent" type="number" step="0.1" {...form.register('alcoholPercent')} />
-              </div>
+              {isAlcohol && (
+                <div className="space-y-2">
+                  <Label htmlFor="alcoholPercent">Alcohol % (Optional)</Label>
+                  <Input id="alcoholPercent" type="number" step="0.1" {...form.register('alcoholPercent')} />
+                </div>
+              )}
 
               <div className="flex items-center justify-between pt-4">
                 <div className="space-y-0.5">

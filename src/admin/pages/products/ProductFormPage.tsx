@@ -83,6 +83,8 @@ export default function ProductFormPage() {
         status: data.status,
         is_featured: data.isFeatured,
         is_active: true,
+        // Store volume as the first tag, e.g. ["750 ML"] or ["500 g"]
+        tags: [`${data.volumeQty} ${data.volumeUnit}`],
       };
 
       let productId = id;

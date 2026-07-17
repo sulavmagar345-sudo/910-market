@@ -1,9 +1,10 @@
-import { type ReactNode, useState, useRef, useCallback } from 'react';
+import { type ReactNode, useState, useRef, useCallback, useEffect } from 'react';
 import { useCartStore } from '../store/useCartStore';
 import { useAuthStore } from '../store/useAuthStore';
 import CartSidebar from './CartSidebar';
 import { Link, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
+import { supabase } from '../lib/supabase';
 
 const ANNOUNCEMENT_TEXT = "Fast Delivery inside Ring Road within 45 minutes   •   Get 10% Off on your first order with code WELCOME   •   100% Authentic Spirits & Secure Checkout   •   ";
 
@@ -11,68 +12,20 @@ interface LayoutProps {
   children: ReactNode;
 }
 
-const navCategories = [
-  {
-    label: 'Whisky',
-    items: ['Single Malt', 'Blended Scotch', 'Bourbon / American', 'Irish Whiskey', 'Japanese Whisky', 'Nepali Whisky (Old Durbar)'],
-  },
-  {
-    label: 'Vodka',
-    items: ['Plain / Pure Vodka', 'Flavoured Vodka', 'Domestic Premium (8848, Ruslan)', 'Imported (Grey Goose, Absolut)'],
-  },
-  {
-    label: 'Beer',
-    items: ['Lager & Pilsner', 'Ale & IPA', 'Stout & Porter', 'Wheat Beer', 'Craft Beer', 'Domestic (Nepal Ice, Gorkha)'],
-  },
-  {
-    label: 'Wine',
-    items: ['Red Wine (Cabernet, Merlot)', 'White Wine (Chardonnay, Sauvignon)', 'Rosé Wine', 'Sparkling & Champagne', 'Port & Dessert Wine'],
-  },
-  {
-    label: 'Rum',
-    items: ['Dark Rum (Khukuri XXX)', 'White & Silver Rum', 'Spiced Rum', 'Aged / Premium Rum'],
-  },
-  {
-    label: 'Brandy & Cognac',
-    items: ['VS (Very Special)', 'VSOP (Very Superior Old Pale)', 'XO (Extra Old)', 'Cognac (Hennessy, Remy Martin)', 'Domestic Brandy'],
-  },
-  {
-    label: 'Gin',
-    items: ['London Dry Gin', 'Botanical Gin', 'Flavoured & Pink Gin', 'Nepali Craft Gin'],
-  },
-  {
-    label: 'Tequila',
-    items: ['Blanco / Silver', 'Reposado', 'Añejo', 'Mezcal', 'Premium Tequila (Don Julio, Patron)'],
-  },
-  {
-    label: 'Liqueurs',
-    items: ['Cream Liqueur (Baileys)', 'Coffee Liqueur (Kahlúa)', 'Fruit Liqueur', 'Herbal & Bitter Liqueur', 'Schnapps'],
-  },
-  {
-    label: 'Sake & Asian',
-    items: ['Japanese Sake', 'Soju (Korean)', 'Baijiu (Chinese)', 'Mao Tai', 'Rice Wine'],
-  },
-  {
-    label: 'Cider & RTD',
-    items: ['Apple Cider', 'Pear Cider', 'Hard Seltzer', 'Ready-to-Drink Cocktails', 'Alcopops'],
-  },
-  { 
-    label: 'Mixers', 
-    items: ['Tonic Water', 'Ginger Ale', 'Club Soda', 'Juices', 'Syrups & Bitters', 'Cocktail Mixes'] 
-  },
-  {
-    label: 'Groceries',
-    items: ['Snacks & Chips', 'Chocolates & Sweets', 'Energy Drinks', 'Soft Drinks & Juices', 'Soda & Water']
-  },
-];
+// These are hidden from the nav (no products to show typically)
+const NAV_HIDDEN_CATEGORIES = ['sadf'];
+
+interface NavProduct { id: string; name: string; slug: string; }
+interface NavCategory { label: string; slug: string; products: NavProduct[]; }
+
 
 import { createPortal } from 'react-dom';
 
-function NavItem({ label, items, isDragging }: { label: string; items: string[]; isDragging?: React.MutableRefObject<boolean> }) {
+function NavItem({ label, slug, products, isDragging }: { label: string; slug: string; products: NavProduct[]; isDragging?: React.MutableRefObject<boolean> }) {
   const [open, setOpen] = useState(false);
   const [coords, setCoords] = useState({ x: 0, y: 0 });
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const hasDropdown = items.length > 0;
+  const hasDropdown = products.length > 0;
 
   const handleMouseEnter = () => {
     if (buttonRef.current) {
@@ -112,19 +65,27 @@ function NavItem({ label, items, isDragging }: { label: string; items: string[];
             exit={{ opacity: 0, y: 8 }}
             transition={{ duration: 0.18, ease: 'easeOut' }}
             style={{ position: 'fixed', top: coords.y + 8, left: coords.x }}
-            className="bg-white border border-stone-gray rounded-lg shadow-xl py-2 min-w-[200px] z-[9999]"
+            className="bg-white border border-stone-gray rounded-lg shadow-xl py-2 min-w-[220px] z-[9999]"
             onMouseEnter={() => setOpen(true)}
             onMouseLeave={() => setOpen(false)}
           >
-            {items.map((item) => (
+            {products.map((product) => (
               <Link
-                key={item}
-                to="/"
+                key={product.id}
+                to={`/products/${product.slug}`}
                 className="block px-5 py-2.5 font-body-md text-sm text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors whitespace-nowrap"
               >
-                {item}
+                {product.name}
               </Link>
             ))}
+            <div className="border-t border-stone-gray/30 mt-1 pt-1">
+              <Link
+                to={`/category/${slug}`}
+                className="block px-5 py-2 text-xs font-label-md uppercase tracking-widest text-secondary hover:text-primary transition-colors"
+              >
+                View All {label} →
+              </Link>
+            </div>
           </motion.div>
         </AnimatePresence>,
         document.body
@@ -138,6 +99,45 @@ export default function Layout({ children }: LayoutProps) {
   const { user, openAuthModal, logout } = useAuthStore();
   const location = useLocation();
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
+  const [navCategories, setNavCategories] = useState<NavCategory[]>([]);
+
+  // Fetch categories + their products for the nav on mount
+  useEffect(() => {
+    const fetchNavData = async () => {
+      try {
+        const { data: cats } = await supabase
+          .from('categories')
+          .select('id, name, slug')
+          .eq('is_active', true)
+          .not('slug', 'in', `(${NAV_HIDDEN_CATEGORIES.map(s => `"${s}"`).join(',')})`)
+          .order('sort_order', { ascending: true });
+
+        if (!cats) return;
+
+        const { data: prods } = await supabase
+          .from('products')
+          .select('id, name, slug, category_id')
+          .eq('is_active', true)
+          .eq('status', 'active')
+          .order('name', { ascending: true });
+
+        const productsByCat: Record<string, NavProduct[]> = {};
+        (prods || []).forEach((p: any) => {
+          if (!productsByCat[p.category_id]) productsByCat[p.category_id] = [];
+          productsByCat[p.category_id].push({ id: p.id, name: p.name, slug: p.slug });
+        });
+
+        setNavCategories(cats.map((c: any) => ({
+          label: c.name,
+          slug: c.slug,
+          products: productsByCat[c.id] || [],
+        })));
+      } catch (err) {
+        console.error('Failed to fetch nav categories:', err);
+      }
+    };
+    fetchNavData();
+  }, []);
 
   const isCheckout = location.pathname === '/checkout';
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
@@ -310,7 +310,7 @@ export default function Layout({ children }: LayoutProps) {
               style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
               {navCategories.map((cat) => (
-                <NavItem key={cat.label} label={cat.label} items={cat.items} isDragging={isDragging} />
+                <NavItem key={cat.label} label={cat.label} slug={cat.slug} products={cat.products} isDragging={isDragging} />
               ))}
             </ul>
           </div>

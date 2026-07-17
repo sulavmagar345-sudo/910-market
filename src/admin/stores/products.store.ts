@@ -65,7 +65,7 @@ export const useProductsStore = create<ProductsStore>((set) => ({
         taxRate: 0, // Mocked or calculated
         stock: 0, // Should be joined from inventory table in a real complex setup
         lowStockThreshold: 5,
-        volume: '',
+        volume: (p.tags && p.tags.length > 0) ? p.tags[0] : '',
         createdAt: p.created_at,
         updatedAt: p.updated_at
       }));
